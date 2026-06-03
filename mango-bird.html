@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🥭 芒果裂开 → 小鸟蹦出</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 100vw; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: #fdf6ee;
+    overflow: hidden;
+    font-family: 'PingFang SC', 'Noto Sans SC', sans-serif;
+    user-select: none;
+  }
+
+  .stage {
+    position: relative;
+    width: 560px; height: 560px;
+  }
+
+  /* ---- Mango ---- */
+  .mango-wrap {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    z-index: 4;
+  }
+  .mango-wrap:hover { transform: scale(1.06); }
+  .mango-wrap:active { transform: scale(0.95); }
+
+  .mango-img {
+    width: 360px; height: auto;
+    filter: drop-shadow(0 8px 24px rgba(0,0,0,0.18));
+  }
+
+  /* ---- Bird ---- */
+  .bird-img {
+    position: absolute;
+    width: 220px; height: auto;
+    z-index: 2;
+    opacity: 0;
+    filter: drop-shadow(0 8px 22px rgba(0,0,0,0.2));
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%) scale(0.3);
+    pointer-events: none;
+  }
+
+  /* ---- Shadow ---- */
+  .shadow {
+    position: absolute;
+    bottom: 60px; left: 50%;
+    width: 120px; height: 16px;
+    background: radial-gradient(ellipse, rgba(0,0,0,0.12) 0%, transparent 70%);
+    transform: translateX(-50%);
+    border-radius: 50%;
+    z-index: 0;
+  }
+
+  /* ---- Hint ---- */
+  .hint {
+    position: absolute;
+    bottom: 30px; left: 50%; transform: translateX(-50%);
+    color: #b8a088; font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    animation: hintPulse 2s infinite;
+    z-index: 10;
+  }
+  @keyframes hintPulse {
+    0%,100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  /* ---- Particles ---- */
+  .particle {
+    position: absolute; z-index: 6;
+    pointer-events: none;
+    background: gold;
+  }
+  .particle.star-4 {
+    clip-path: polygon(50% 0%, 61% 38%, 100% 50%, 61% 62%, 50% 100%, 39% 62%, 0% 50%, 39% 38%);
+  }
+  .particle.diamond {
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  }
+  .particle.spark {
+    clip-path: polygon(50% 0%, 65% 35%, 100% 45%, 70% 55%, 80% 100%, 50% 65%, 20% 100%, 30% 55%, 0% 45%, 35% 35%);
+  }
+
+  /* ---- Reset ---- */
+  .reset-btn {
+    position: absolute; top: 20px; right: 24px;
+    background: #f0e0d0; border: none;
+    padding: 8px 18px; border-radius: 20px;
+    font-size: 0.85rem; color: #6a5040;
+    cursor: pointer; z-index: 20;
+    transition: all 0.2s;
+    opacity: 0.5;
+  }
+  .reset-btn:hover { background: #e0c8b0; }
+
+  @keyframes birdIdle {
+    0%,100% { transform: translate(-50%, -50%) translateY(0px); }
+    50% { transform: translate(-50%, -50%) translateY(-8px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+
+  <div class="shadow" id="shadow"></div>
+
+  <div class="mango-wrap" id="mangoWrap">
+    <img class="mango-img" id="mangoImg" src="assets/芒果_nobg.png" alt="芒果">
+  </div>
+
+  <img class="bird-img" id="birdImg" src="assets/终图_绿翅.png" alt="小鸟">
+
+  <div class="hint" id="hint">👆 点一下芒果</div>
+  <button class="reset-btn" id="resetBtn" onclick="resetAll()">🔄 再来一次</button>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const mangoWrap = $('mangoWrap');
+const birdImg   = $('birdImg');
+const shadow    = $('shadow');
+const hint      = $('hint');
+const resetBtn  = $('resetBtn');
+const stage     = $('stage');
+
+let animating = false;
+
+mangoWrap.addEventListener('click', () => {
+  if (animating) return;
+  animating = true;
+  hint.style.opacity = '0';
+
+  // ---- Shake twice ----
+  mangoWrap.style.transition = 'transform 0.08s ease-in-out';
+  let shakes = 0;
+  const shakeIt = () => {
+    if (shakes >= 4) {
+      burstMango();
+      return;
+    }
+    const offset = shakes % 2 === 0 ? -10 : 10;
+    mangoWrap.style.transform = `translateX(${offset}px) rotate(${offset*0.5}deg)`;
+    shakes++;
+    setTimeout(shakeIt, 80);
+  };
+  shakeIt();
+});
+
+function burstMango() {
+  // Mango bursts outward (scale up + fade out)
+  mangoWrap.style.transition = 'transform 0.25s ease-out, opacity 0.25s ease-out';
+  mangoWrap.style.transform = 'scale(1.5)';
+  mangoWrap.style.opacity = '0';
+
+  // ---- Spawn large bright particles ----
+  spawnParticles();
+
+  // ---- Bird pops out simultaneously ----
+  setTimeout(() => {
+    birdImg.style.opacity = '1';
+    birdImg.style.transition = 'transform 0.45s cubic-bezier(0.34,1.56,0.64,1)';
+    birdImg.style.transform = 'translate(-50%, -50%) scale(1) translateY(-30px)';
+
+    shadow.style.width = '160px';
+
+    setTimeout(() => {
+      birdImg.style.transition = 'transform 0.25s cubic-bezier(0.34,1.2,0.64,1)';
+      birdImg.style.transform = 'translate(-50%, -50%) scale(1) translateY(0px)';
+    }, 450);
+
+    setTimeout(() => {
+      birdImg.style.animation = 'birdIdle 1.5s ease-in-out infinite';
+    }, 750);
+  }, 100);
+
+  resetBtn.style.opacity = '1';
+}
+
+function spawnParticles() {
+  const shapes = ['star-4', 'diamond', 'spark'];
+  const colors = ['#ffe566','#ffcc00','#ffb800','#ffd700','#fff2a0'];
+  for (let i = 0; i < 35; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle ' + shapes[Math.floor(Math.random() * shapes.length)];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    p.style.background = color;
+
+    // 18-32px
+    const startSize = 18 + Math.random() * 14;
+    p.style.width  = startSize + 'px';
+    p.style.height = startSize + 'px';
+
+    p.style.filter = 'drop-shadow(0 0 2px rgba(255,255,255,0.6))';
+
+    p.style.left = (45 + Math.random() * 10) + '%';
+    p.style.top  = (45 + Math.random() * 10) + '%';
+
+    const angle = (Math.random() - 0.3) * Math.PI * 2;
+    const dist  = 100 + Math.random() * 200;
+    const dx = Math.cos(angle) * dist;
+    const dy = Math.sin(angle) * dist - 30 - Math.random() * 60;
+
+    const rot = (Math.random() - 0.5) * 360;
+
+    stage.appendChild(p);
+
+    p.style.opacity = '1';
+    p.style.transform = 'translate(0, 0) scale(1.2) rotate(0deg)';
+
+    requestAnimationFrame(() => {
+      p.style.transition = `all 0.3s cubic-bezier(0,0.5,0.3,1)`;
+      p.style.transform = `translate(${dx}px, ${dy}px) scale(0.8) rotate(${rot}deg)`;
+    });
+
+    setTimeout(() => {
+      p.style.transition = 'all 0.6s ease-in';
+      p.style.transform = `translate(${dx * 1.2}px, ${dy + 60 + Math.random() * 80}px) scale(0.5) rotate(${rot * 2}deg)`;
+      p.style.opacity = '0.7';
+    }, 300);
+
+    setTimeout(() => {
+      p.style.transition = 'all 2s ease-out';
+      p.style.opacity = '0';
+      p.style.transform = `translate(${dx * 1.3}px, ${dy + 120 + Math.random() * 80}px) scale(0.05) rotate(${rot * 3}deg)`;
+    }, 900);
+
+    setTimeout(() => p.remove(), 3500);
+  }
+}
+
+function resetAll() {
+  animating = false;
+
+  // Remove leftover particles
+  stage.querySelectorAll('.particle').forEach(p => p.remove());
+
+  // Reset mango
+  mangoWrap.style.transition = 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s';
+  mangoWrap.style.transform = '';
+  mangoWrap.style.opacity = '1';
+
+  // Reset bird
+  birdImg.style.transition = 'none';
+  birdImg.style.animation = 'none';
+  birdImg.style.opacity = '0';
+  birdImg.style.transform = 'translate(-50%, -50%) scale(0.3)';
+
+  // Reset shadow
+  shadow.style.width = '120px';
+
+  hint.style.opacity = '';
+  resetBtn.style.opacity = '0.5';
+}
+</script>
+
+</body>
+</html>
