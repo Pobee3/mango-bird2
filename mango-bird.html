@@ -3,262 +3,804 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🥭 芒果裂开 → 小鸟蹦出</title>
+<title>芒果小鸟互动原型</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
   body {
-    width: 100vw; height: 100vh;
-    display: flex; align-items: center; justify-content: center;
-    background: #fdf6ee;
+    width: 100vw;
+    height: 100vh;
     overflow: hidden;
+    background: #fdf6ee;
     font-family: 'PingFang SC', 'Noto Sans SC', sans-serif;
     user-select: none;
   }
 
   .stage {
-    position: relative;
-    width: 640px; height: 640px;
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    cursor: default;
+    touch-action: none;
   }
 
   /* ---- Mango ---- */
   .mango-wrap {
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(460px, 64vw);
+    transform: translate(-50%, -50%);
     cursor: pointer;
     z-index: 4;
+    transform-origin: center;
+    transition: transform 0.18s ease, opacity 0.25s ease;
   }
-  .mango-wrap:hover { transform: scale(1.06); }
-  .mango-wrap:active { transform: scale(0.95); }
+
+  .mango-wrap:hover { transform: translate(-50%, -50%) scale(1.04); }
+  .mango-wrap:active { transform: translate(-50%, -50%) scale(0.96); }
 
   .mango-img {
-    width: 440px; height: auto;
+    display: block;
+    width: 100%;
+    height: auto;
     filter: drop-shadow(0 8px 24px rgba(0,0,0,0.18));
+    pointer-events: none;
+    transform-origin: 50% 58%;
+    animation: mangoBreath 1.8s ease-in-out infinite;
   }
 
   /* ---- Bird ---- */
-  .bird-img {
+  .bird-wrap {
     position: absolute;
-    width: 220px; height: auto;
-    z-index: 2;
+    left: 0;
+    top: 0;
+    width: clamp(150px, 22vw, 230px);
     opacity: 0;
-    filter: drop-shadow(0 8px 22px rgba(0,0,0,0.2));
-    left: 50%; top: 50%;
-    transform: translate(-50%, -50%) scale(0.3);
+    z-index: 8;
     pointer-events: none;
+    transform: translate(-50%, -50%) translate3d(0, 0, 0) scale(0.3);
+    transform-origin: center 76%;
+    will-change: transform, opacity;
+  }
+
+  .bird-wrap.ready {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  .bird-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 8px 22px rgba(0,0,0,0.2));
+    transform-origin: 50% 50%;
+    will-change: transform;
+    pointer-events: none;
+  }
+
+  .bird-wrap.idle .bird-img {
+    animation: birdIdle 1.6s ease-in-out infinite;
+  }
+
+  .bird-wrap.nuzzle .bird-img {
+    animation: birdNuzzle 0.7s ease-in-out infinite;
+  }
+
+  .bird-wrap.nuzzle.has-frames .bird-img {
+    animation: none;
+    transform: scaleX(var(--face, 1));
+  }
+
+  .bird-wrap.chase .bird-img {
+    animation: birdRunFlap 0.34s ease-in-out infinite;
+  }
+
+  .bird-wrap.chase.has-frames .bird-img {
+    animation: none;
+    transform: scaleX(var(--face, 1));
+  }
+
+  .bird-wrap.peck .bird-img {
+    animation: birdPeck 0.28s ease-in-out 3;
+  }
+
+  .bird-wrap.peck.has-frames .bird-img {
+    animation: none;
+    transform: scaleX(var(--face, 1));
   }
 
   /* ---- Shadow ---- */
   .shadow {
     position: absolute;
-    bottom: 60px; left: 50%;
-    width: 120px; height: 16px;
-    background: radial-gradient(ellipse, rgba(0,0,0,0.12) 0%, transparent 70%);
-    transform: translateX(-50%);
+    left: 0;
+    top: 0;
+    width: 120px;
+    height: 16px;
+    opacity: 0;
+    background: radial-gradient(ellipse, rgba(80, 61, 45, 0.15) 0%, rgba(80, 61, 45, 0.04) 55%, transparent 72%);
     border-radius: 50%;
-    z-index: 0;
+    z-index: 1;
+    pointer-events: none;
+    transform: translate(-50%, 72px);
+    transition: opacity 0.25s ease, width 0.2s ease;
   }
 
   /* ---- Hint ---- */
   .hint {
     position: absolute;
-    bottom: 30px; left: 50%; transform: translateX(-50%);
-    color: #b8a088; font-size: 0.9rem;
-    letter-spacing: 0.05em;
+    left: 50%;
+    bottom: max(28px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    color: #9a8068;
+    font-size: 0.92rem;
+    letter-spacing: 0.04em;
     animation: hintPulse 2s infinite;
     z-index: 10;
+    pointer-events: none;
   }
+
   @keyframes hintPulse {
-    0%,100% { opacity: 0.5; }
+    0%,100% { opacity: 0.48; }
     50% { opacity: 1; }
+  }
+
+  @keyframes mangoBreath {
+    0%,100% {
+      transform: scale(1);
+      filter: drop-shadow(0 8px 24px rgba(0,0,0,0.18));
+    }
+    50% {
+      transform: scale(1.035) translateY(-3px);
+      filter: drop-shadow(0 12px 28px rgba(0,0,0,0.16));
+    }
   }
 
   /* ---- Particles ---- */
   .particle {
-    position: absolute; z-index: 6;
+    position: absolute;
+    z-index: 6;
     pointer-events: none;
     background: gold;
   }
+
   .particle.star-4 {
     clip-path: polygon(50% 0%, 61% 38%, 100% 50%, 61% 62%, 50% 100%, 39% 62%, 0% 50%, 39% 38%);
   }
+
   .particle.diamond {
     clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   }
+
   .particle.spark {
     clip-path: polygon(50% 0%, 65% 35%, 100% 45%, 70% 55%, 80% 100%, 50% 65%, 20% 100%, 30% 55%, 0% 45%, 35% 35%);
   }
 
   /* ---- Reset ---- */
   .reset-btn {
-    position: absolute; top: 20px; right: 24px;
-    background: #f0e0d0; border: none;
-    padding: 8px 18px; border-radius: 20px;
-    font-size: 0.85rem; color: #6a5040;
-    cursor: pointer; z-index: 20;
-    transition: all 0.2s;
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    background: #f0e0d0;
+    border: 0;
+    padding: 8px 18px;
+    border-radius: 18px;
+    font-size: 0.85rem;
+    color: #6a5040;
+    cursor: pointer;
+    z-index: 20;
+    transition: background 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
     opacity: 0.5;
   }
-  .reset-btn:hover { background: #e0c8b0; }
+
+  .reset-btn:hover {
+    background: #e0c8b0;
+    opacity: 1;
+    transform: translateY(-1px);
+  }
 
   @keyframes birdIdle {
-    0%,100% { transform: translate(-50%, -50%) translateY(0px); }
-    50% { transform: translate(-50%, -50%) translateY(-8px); }
+    0%,100% { transform: translateY(0) rotate(0deg) scaleX(var(--face, 1)) scaleY(1); }
+    50% { transform: translateY(-8px) rotate(-1.5deg) scaleX(var(--face, 1)) scaleY(1.015); }
+  }
+
+  @keyframes birdNuzzle {
+    0%,100% { transform: translateX(-5px) translateY(0) rotate(-4deg) scaleX(var(--face, 1)) scaleY(1.02); }
+    50% { transform: translateX(9px) translateY(-5px) rotate(5deg) scaleX(var(--face, 1)) scaleY(0.98); }
+  }
+
+  @keyframes birdRunFlap {
+    0%,100% { transform: translateY(0) rotate(-6deg) skewX(-2deg) scaleX(var(--face, 1)) scaleY(1.02); }
+    35% { transform: translateY(-15px) rotate(8deg) skewX(4deg) scaleX(var(--face, 1)) scaleY(0.96); }
+    70% { transform: translateY(3px) rotate(-3deg) skewX(-3deg) scaleX(var(--face, 1)) scaleY(1.04); }
+  }
+
+  @keyframes birdPeck {
+    0%,100% { transform: translateX(0) rotate(0deg) scaleX(var(--face, 1)); }
+    45% { transform: translateX(var(--peck-x, 18px)) translateY(8px) rotate(var(--peck-rot, 13deg)) scaleX(var(--face, 1)) scaleY(0.94); }
+  }
+
+  @media (max-width: 620px) {
+    .reset-btn {
+      top: 14px;
+      right: 14px;
+      padding: 7px 14px;
+    }
+
+    .hint {
+      font-size: 0.84rem;
+      width: calc(100vw - 32px);
+      text-align: center;
+    }
   }
 </style>
 </head>
 <body>
 
 <div class="stage" id="stage">
-
   <div class="shadow" id="shadow"></div>
 
   <div class="mango-wrap" id="mangoWrap">
     <img class="mango-img" id="mangoImg" src="assets/芒果_nobg.png" alt="芒果">
   </div>
 
-  <img class="bird-img" id="birdImg" src="assets/终图_绿翅.png" alt="小鸟">
+  <div class="bird-wrap" id="birdWrap" aria-label="小鸟" role="img">
+    <img class="bird-img" id="birdImg" src="assets/终图_绿翅.png" alt="">
+  </div>
 
-  <div class="hint" id="hint">👆 点一下芒果</div>
-  <button class="reset-btn" id="resetBtn" onclick="resetAll()">🔄 再来一次</button>
+  <div class="hint" id="hint">点一下芒果</div>
+  <button class="reset-btn" id="resetBtn" type="button">再来一次</button>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
 const mangoWrap = $('mangoWrap');
-const birdImg   = $('birdImg');
-const shadow    = $('shadow');
-const hint      = $('hint');
-const resetBtn  = $('resetBtn');
-const stage     = $('stage');
+const birdWrap = $('birdWrap');
+const birdImg = $('birdImg');
+const shadow = $('shadow');
+const hint = $('hint');
+const resetBtn = $('resetBtn');
+const stage = $('stage');
+const defaultBirdSrc = 'assets/终图_绿翅.png';
 
-let animating = false;
+const frameSets = {
+  nuzzle: [
+    'assets/bird-frames/nuzzle-01.png',
+    'assets/bird-frames/nuzzle-02.png',
+    'assets/bird-frames/nuzzle-03.png',
+    'assets/bird-frames/nuzzle-04.png'
+  ],
+  chase: [
+    'assets/bird-frames/chase-01.png',
+    'assets/bird-frames/chase-02.png',
+    'assets/bird-frames/chase-03.png'
+  ],
+  peck: [
+    'assets/bird-frames/peck-01.png',
+    'assets/bird-frames/peck-02.png',
+    'assets/bird-frames/peck-03.png',
+    'assets/bird-frames/peck-04.png'
+  ]
+};
 
-mangoWrap.addEventListener('click', () => {
-  if (animating) return;
-  animating = true;
+const loadedFrames = {};
+
+const config = {
+  headNuzzleRadiusX: 25,
+  leftHeadNuzzleRadiusX: 32,
+  headNuzzleRadiusY: 38,
+  headOffsetX: 54,
+  leftHeadOffsetX: 66,
+  headOffsetY: -46,
+  headBottomOffsetY: -8,
+  nuzzleLoops: 3,
+  nuzzleFrameDuration: 140,
+  nuzzleDwell: 500,
+  beakOffsetX: 68,
+  beakOffsetY: -20,
+  visibleBodyRatio: 0.62,
+  chaseClickBodyScale: 1,
+  hatchDuration: 820,
+  peckDuration: 920,
+  chaseSpeed: 0.2,
+  nuzzleEase: 0.13,
+  screenPadding: 72
+};
+
+const pet = {
+  state: 'hidden',
+  ready: false,
+  x: window.innerWidth / 2,
+  y: window.innerHeight / 2,
+  scale: 0.3,
+  face: 1,
+  pointer: null,
+  nuzzleArmed: true,
+  nuzzleHoverTimer: null,
+  timers: new Set(),
+  chaseFrame: null,
+  nuzzleFrame: null,
+  frameTimer: null,
+  frameIndex: 0
+};
+
+function clearPetTimers() {
+  pet.timers.forEach(timer => clearTimeout(timer));
+  pet.timers.clear();
+}
+
+function later(callback, delay) {
+  const timer = setTimeout(() => {
+    pet.timers.delete(timer);
+    callback();
+  }, delay);
+  pet.timers.add(timer);
+  return timer;
+}
+
+function setPetState(nextState) {
+  pet.state = nextState;
+  birdWrap.className = `bird-wrap ${nextState}`;
+  birdWrap.classList.toggle('ready', pet.ready);
+  birdWrap.classList.toggle('has-frames', hasFrameSet(nextState));
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function clampPoint(point) {
+  const pad = Math.min(config.screenPadding, Math.max(38, window.innerWidth * 0.12));
+  return {
+    x: clamp(point.x, pad, window.innerWidth - pad),
+    y: clamp(point.y, pad, window.innerHeight - pad)
+  };
+}
+
+function getBirdCenter() {
+  return { x: pet.x, y: pet.y };
+}
+
+function distanceBetween(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function distanceToBird(x, y) {
+  return distanceBetween({ x, y }, getBirdCenter());
+}
+
+function getBirdBodyMetrics() {
+  const rect = birdWrap.getBoundingClientRect();
+  const imageBoxSize = Math.max(rect.width, rect.height);
+  const bodySize = imageBoxSize * config.visibleBodyRatio;
+  return {
+    rect,
+    imageBoxSize,
+    bodySize,
+    chaseClickDistance: bodySize * config.chaseClickBodyScale
+  };
+}
+
+function getBirdHeadPoint() {
+  const offsetX = pet.face < 0 ? config.leftHeadOffsetX : config.headOffsetX;
+  return {
+    x: pet.x + pet.face * offsetX,
+    y: pet.y + config.headOffsetY
+  };
+}
+
+function distanceToBirdHead(x, y) {
+  return distanceBetween({ x, y }, getBirdHeadPoint());
+}
+
+function isPointerInHeadZone(pointer) {
+  if (!pointer) return false;
+  if (pointer.y > pet.y + config.headBottomOffsetY) return false;
+
+  const head = getBirdHeadPoint();
+  const radiusX = pet.face < 0 ? config.leftHeadNuzzleRadiusX : config.headNuzzleRadiusX;
+  const dx = (pointer.x - head.x) / radiusX;
+  const dy = (pointer.y - head.y) / config.headNuzzleRadiusY;
+  return dx * dx + dy * dy <= 1;
+}
+
+function updateFacing(targetX) {
+  pet.face = targetX < pet.x ? -1 : 1;
+  birdImg.style.setProperty('--face', pet.face);
+  birdImg.style.setProperty('--peck-x', `${pet.face * 18}px`);
+  birdImg.style.setProperty('--peck-rot', `${pet.face * 13}deg`);
+}
+
+function renderBird(options = {}) {
+  const scale = options.scale ?? pet.scale;
+  const lift = options.lift ?? 0;
+  birdWrap.style.opacity = options.opacity ?? (birdWrap.style.opacity || '1');
+  birdWrap.style.transform = `translate(-50%, -50%) translate3d(${pet.x}px, ${pet.y + lift}px, 0) scale(${scale})`;
+  shadow.style.transform = `translate(-50%, 72px) translate3d(${pet.x}px, ${pet.y}px, 0)`;
+  shadow.style.width = `${118 + Math.min(54, scale * 42)}px`;
+}
+
+function stopMotionLoops() {
+  if (pet.chaseFrame) cancelAnimationFrame(pet.chaseFrame);
+  if (pet.nuzzleFrame) cancelAnimationFrame(pet.nuzzleFrame);
+  stopFramePlayback();
+  pet.chaseFrame = null;
+  pet.nuzzleFrame = null;
+}
+
+function stopFramePlayback() {
+  if (pet.frameTimer) clearTimeout(pet.frameTimer);
+  pet.frameTimer = null;
+  pet.frameIndex = 0;
+}
+
+function cancelNuzzleHover() {
+  if (pet.nuzzleHoverTimer) clearTimeout(pet.nuzzleHoverTimer);
+  pet.nuzzleHoverTimer = null;
+}
+
+function preloadFrameSet(name) {
+  const frames = frameSets[name] || [];
+  loadedFrames[name] = [];
+
+  frames.forEach((src, index) => {
+    const img = new Image();
+    img.onload = () => {
+      loadedFrames[name][index] = src;
+    };
+    img.src = src;
+  });
+}
+
+function hasFrameSet(name) {
+  if (!frameSets[name]) return false;
+  return (loadedFrames[name] || []).filter(Boolean).length >= 2;
+}
+
+function playFrameSet(name, options = {}) {
+  if (!hasFrameSet(name)) return false;
+
+  const frames = loadedFrames[name].filter(Boolean);
+  const duration = options.duration || 110;
+  const loop = options.loop ?? true;
+  birdImg.src = frames[0];
+  pet.frameIndex = 0;
+
+  const step = () => {
+    if (pet.state !== name) return;
+
+    pet.frameIndex += 1;
+    if (pet.frameIndex >= frames.length) {
+      if (!loop) return;
+      pet.frameIndex = 0;
+    }
+
+    birdImg.src = frames[pet.frameIndex];
+    pet.frameTimer = setTimeout(step, duration);
+  };
+
+  pet.frameTimer = setTimeout(step, duration);
+  return true;
+}
+
+function restoreDefaultBirdImage() {
+  birdImg.src = defaultBirdSrc;
+}
+
+function moveBirdToward(target, options = {}) {
+  const done = options.done || (() => {});
+  const speed = options.speed || config.chaseSpeed;
+  const arriveDistance = options.arriveDistance || 14;
+  const boundedTarget = clampPoint(target);
+  stopMotionLoops();
+  updateFacing(boundedTarget.x);
+  playFrameSet('chase', { duration: 95, loop: true });
+
+  const step = () => {
+    const dx = boundedTarget.x - pet.x;
+    const dy = boundedTarget.y - pet.y;
+    const distance = Math.hypot(dx, dy);
+
+    if (distance <= arriveDistance || pet.state !== 'chase') {
+      pet.x = boundedTarget.x;
+      pet.y = boundedTarget.y;
+      renderBird({ scale: 1.02 });
+      pet.chaseFrame = null;
+      done();
+      return;
+    }
+
+    const travel = Math.min(distance, Math.max(6, distance * speed * 0.12));
+    pet.x += (dx / distance) * travel;
+    pet.y += (dy / distance) * travel;
+    renderBird({ scale: 1.03, lift: Math.sin(performance.now() / 70) * -5 });
+    pet.chaseFrame = requestAnimationFrame(step);
+  };
+
+  pet.chaseFrame = requestAnimationFrame(step);
+}
+
+function playNuzzle(pointer) {
+  if (!pet.ready || ['chase', 'peck', 'hatching'].includes(pet.state)) return;
+
+  if (pet.state === 'nuzzle') {
+    if (pointer) updateFacing(pointer.x);
+    renderBird({ scale: 1.02, lift: -3 });
+    return;
+  }
+
+  if (!isPointerInHeadZone(pointer)) {
+    cancelNuzzleHover();
+    pet.nuzzleArmed = true;
+    return;
+  }
+
+  updateFacing(pointer.x);
+  if (!pet.nuzzleArmed) return;
+  if (pet.nuzzleHoverTimer) return;
+
+  pet.nuzzleHoverTimer = setTimeout(() => {
+    pet.nuzzleHoverTimer = null;
+    if (!pet.ready || pet.state !== 'idle' || !pet.nuzzleArmed || !isPointerInHeadZone(pet.pointer)) return;
+    startNuzzle(pet.pointer);
+  }, config.nuzzleDwell);
+}
+
+function startNuzzle(pointer) {
+  updateFacing(pointer.x);
+  pet.nuzzleArmed = false;
+  setPetState('nuzzle');
+  stopMotionLoops();
+  playFrameSet('nuzzle', { duration: config.nuzzleFrameDuration, loop: true });
+  renderBird({ scale: 1.02, lift: -3 });
+
+  later(() => {
+    if (pet.state !== 'nuzzle') return;
+    stopFramePlayback();
+    restoreDefaultBirdImage();
+    setPetState('idle');
+    renderBird({ scale: 1 });
+  }, Math.max(2, (loadedFrames.nuzzle || []).filter(Boolean).length) * config.nuzzleFrameDuration * config.nuzzleLoops);
+}
+
+function playPeck(target) {
+  updateFacing(target.x);
+  stopFramePlayback();
+  setPetState('peck');
+  renderBird({ scale: 1.02 });
+  if (!playFrameSet('peck', { duration: 110, loop: true })) {
+    restoreDefaultBirdImage();
+  }
+
+  later(() => {
+    if (pet.state !== 'peck') return;
+    restoreDefaultBirdImage();
+    setPetState('idle');
+    renderBird({ scale: 1 });
+  }, config.peckDuration);
+}
+
+function playChaseAndPeck(target) {
+  if (!pet.ready || ['chase', 'peck', 'hatching'].includes(pet.state)) return;
+  clearPetTimers();
+  stopMotionLoops();
+  cancelNuzzleHover();
+
+  const face = target.x < pet.x ? -1 : 1;
+  const boundedTarget = clampPoint({
+    x: target.x - face * config.beakOffsetX,
+    y: target.y - config.beakOffsetY
+  });
+
+  setPetState('chase');
+  moveBirdToward(boundedTarget, {
+    arriveDistance: 18,
+    done: () => playPeck(target)
+  });
+}
+
+function spawnBird() {
+  pet.ready = false;
+  setPetState('hatching');
+  pet.x = window.innerWidth / 2;
+  pet.y = window.innerHeight / 2 - 16;
+  pet.scale = 0.3;
+  birdWrap.style.transition = 'transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease';
+  birdWrap.style.opacity = '1';
+  shadow.style.opacity = '1';
+  renderBird({ scale: 0.3, lift: 20, opacity: '1' });
+
+  requestAnimationFrame(() => {
+    pet.scale = 1;
+    renderBird({ scale: 1.08, lift: -38, opacity: '1' });
+  });
+
+  later(() => {
+    renderBird({ scale: 1, lift: 0 });
+  }, 460);
+
+  later(() => {
+    pet.ready = true;
+    birdWrap.style.transition = 'transform 0.12s linear, opacity 0.18s ease';
+    setPetState('idle');
+    renderBird({ scale: 1 });
+  }, config.hatchDuration);
+}
+
+function burstMango() {
+  mangoWrap.style.transition = 'transform 0.25s ease-out, opacity 0.25s ease-out';
+  mangoWrap.style.transform = 'translate(-50%, -50%) scale(1.5)';
+  mangoWrap.style.opacity = '0';
+  mangoWrap.style.pointerEvents = 'none';
+  spawnParticles();
+  later(spawnBird, 100);
+  resetBtn.style.opacity = '1';
+}
+
+function hatchFromMango() {
+  if (pet.state !== 'hidden') return;
+  clearPetTimers();
+  setPetState('hatching');
   hint.style.opacity = '0';
-
-  // ---- Shake twice ----
   mangoWrap.style.transition = 'transform 0.08s ease-in-out';
+
   let shakes = 0;
   const shakeIt = () => {
     if (shakes >= 4) {
       burstMango();
       return;
     }
+
     const offset = shakes % 2 === 0 ? -10 : 10;
-    mangoWrap.style.transform = `translateX(${offset}px) rotate(${offset*0.5}deg)`;
+    mangoWrap.style.transform = `translate(-50%, -50%) translateX(${offset}px) rotate(${offset * 0.5}deg)`;
     shakes++;
-    setTimeout(shakeIt, 80);
+    later(shakeIt, 80);
   };
+
   shakeIt();
-});
-
-function burstMango() {
-  // Mango bursts outward (scale up + fade out)
-  mangoWrap.style.transition = 'transform 0.25s ease-out, opacity 0.25s ease-out';
-  mangoWrap.style.transform = 'scale(1.5)';
-  mangoWrap.style.opacity = '0';
-
-  // ---- Spawn large bright particles ----
-  spawnParticles();
-
-  // ---- Bird pops out simultaneously ----
-  setTimeout(() => {
-    birdImg.style.opacity = '1';
-    birdImg.style.transition = 'transform 0.45s cubic-bezier(0.34,1.56,0.64,1)';
-    birdImg.style.transform = 'translate(-50%, -50%) scale(1) translateY(-30px)';
-
-    shadow.style.width = '160px';
-
-    setTimeout(() => {
-      birdImg.style.transition = 'transform 0.25s cubic-bezier(0.34,1.2,0.64,1)';
-      birdImg.style.transform = 'translate(-50%, -50%) scale(1) translateY(0px)';
-    }, 450);
-
-    setTimeout(() => {
-      birdImg.style.animation = 'birdIdle 1.5s ease-in-out infinite';
-    }, 750);
-  }, 100);
-
-  resetBtn.style.opacity = '1';
 }
 
 function spawnParticles() {
   const shapes = ['star-4', 'diamond', 'spark'];
-  const colors = ['#ffe566','#ffcc00','#ffb800','#ffd700','#fff2a0'];
+  const colors = ['#ffe566', '#ffcc00', '#ffb800', '#ffd700', '#fff2a0'];
+
   for (let i = 0; i < 35; i++) {
     const p = document.createElement('div');
     p.className = 'particle ' + shapes[Math.floor(Math.random() * shapes.length)];
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    p.style.background = color;
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
 
-    // 18-32px
     const startSize = 18 + Math.random() * 14;
-    p.style.width  = startSize + 'px';
+    p.style.width = startSize + 'px';
     p.style.height = startSize + 'px';
-
     p.style.filter = 'drop-shadow(0 0 2px rgba(255,255,255,0.6))';
-
-    p.style.left = (45 + Math.random() * 10) + '%';
-    p.style.top  = (45 + Math.random() * 10) + '%';
+    p.style.left = (48 + Math.random() * 4) + '%';
+    p.style.top = (48 + Math.random() * 4) + '%';
 
     const angle = (Math.random() - 0.3) * Math.PI * 2;
-    const dist  = 100 + Math.random() * 200;
+    const dist = 100 + Math.random() * 200;
     const dx = Math.cos(angle) * dist;
     const dy = Math.sin(angle) * dist - 30 - Math.random() * 60;
-
     const rot = (Math.random() - 0.5) * 360;
 
     stage.appendChild(p);
-
     p.style.opacity = '1';
     p.style.transform = 'translate(0, 0) scale(1.2) rotate(0deg)';
 
     requestAnimationFrame(() => {
-      p.style.transition = `all 0.3s cubic-bezier(0,0.5,0.3,1)`;
+      p.style.transition = 'all 0.3s cubic-bezier(0,0.5,0.3,1)';
       p.style.transform = `translate(${dx}px, ${dy}px) scale(0.8) rotate(${rot}deg)`;
     });
 
-    setTimeout(() => {
+    later(() => {
       p.style.transition = 'all 0.6s ease-in';
       p.style.transform = `translate(${dx * 1.2}px, ${dy + 60 + Math.random() * 80}px) scale(0.5) rotate(${rot * 2}deg)`;
       p.style.opacity = '0.7';
     }, 300);
 
-    setTimeout(() => {
+    later(() => {
       p.style.transition = 'all 2s ease-out';
       p.style.opacity = '0';
       p.style.transform = `translate(${dx * 1.3}px, ${dy + 120 + Math.random() * 80}px) scale(0.05) rotate(${rot * 3}deg)`;
     }, 900);
 
-    setTimeout(() => p.remove(), 3500);
+    later(() => p.remove(), 3500);
+  }
+}
+
+function handlePointerMove(event) {
+  pet.pointer = { x: event.clientX, y: event.clientY };
+  if (pet.ready && !['chase', 'peck', 'hatching'].includes(pet.state)) {
+    updateFacing(pet.pointer.x);
+  }
+  playNuzzle(pet.pointer);
+}
+
+function handleStageClick(event) {
+  if (!pet.ready) return;
+  if (event.target === resetBtn) return;
+
+  const point = { x: event.clientX, y: event.clientY };
+  const body = getBirdBodyMetrics();
+
+  if (birdWrap.contains(event.target)) {
+    return;
+  }
+
+  if (distanceToBird(point.x, point.y) >= body.chaseClickDistance) {
+    playChaseAndPeck(point);
   }
 }
 
 function resetAll() {
-  animating = false;
-
-  // Remove leftover particles
+  clearPetTimers();
+  stopMotionLoops();
   stage.querySelectorAll('.particle').forEach(p => p.remove());
 
-  // Reset mango
-  mangoWrap.style.transition = 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s';
-  mangoWrap.style.transform = '';
-  mangoWrap.style.opacity = '1';
+  pet.ready = false;
+  pet.x = window.innerWidth / 2;
+  pet.y = window.innerHeight / 2;
+  pet.scale = 0.3;
+  pet.face = 1;
+  pet.pointer = null;
+  pet.nuzzleArmed = true;
+  cancelNuzzleHover();
 
-  // Reset bird
-  birdImg.style.transition = 'none';
-  birdImg.style.animation = 'none';
-  birdImg.style.opacity = '0';
-  birdImg.style.transform = 'translate(-50%, -50%) scale(0.3)';
+  restoreDefaultBirdImage();
+  birdImg.style.setProperty('--face', 1);
+  birdWrap.style.transition = 'none';
+  birdWrap.style.opacity = '0';
+  renderBird({ scale: 0.3, opacity: '0' });
+  setPetState('hidden');
+  birdWrap.classList.remove('ready');
 
-  // Reset shadow
+  shadow.style.opacity = '0';
   shadow.style.width = '120px';
+  shadow.style.transform = 'translate(-50%, 72px)';
+
+  mangoWrap.style.pointerEvents = 'auto';
+  mangoWrap.style.transition = 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s';
+  mangoWrap.style.transform = 'translate(-50%, -50%)';
+  mangoWrap.style.opacity = '1';
 
   hint.style.opacity = '';
   resetBtn.style.opacity = '0.5';
 }
+
+mangoWrap.addEventListener('click', event => {
+  event.stopPropagation();
+  hatchFromMango();
+});
+
+birdWrap.addEventListener('click', event => {
+  event.stopPropagation();
+});
+
+stage.addEventListener('pointermove', handlePointerMove);
+stage.addEventListener('click', handleStageClick);
+resetBtn.addEventListener('click', event => {
+  event.stopPropagation();
+  resetAll();
+});
+
+window.addEventListener('resize', () => {
+  pet.x = clamp(pet.x, config.screenPadding, window.innerWidth - config.screenPadding);
+  pet.y = clamp(pet.y, config.screenPadding, window.innerHeight - config.screenPadding);
+  renderBird({ scale: pet.ready ? 1 : pet.scale, opacity: pet.ready ? '1' : birdWrap.style.opacity });
+});
+
+window.resetAll = resetAll;
+window.setPetState = setPetState;
+window.getBirdCenter = getBirdCenter;
+window.getBirdBodyMetrics = getBirdBodyMetrics;
+window.getBirdHeadPoint = getBirdHeadPoint;
+window.distanceToBird = distanceToBird;
+window.distanceToBirdHead = distanceToBirdHead;
+window.moveBirdToward = moveBirdToward;
+window.playNuzzle = playNuzzle;
+window.playChaseAndPeck = playChaseAndPeck;
+
+Object.keys(frameSets).forEach(preloadFrameSet);
+resetAll();
 </script>
 
 </body>
