@@ -110,6 +110,17 @@
     transform: scaleX(var(--face, 1));
   }
 
+  .bird-wrap.sleeping .bird-img {
+    animation: birdSleepBreath 2.4s ease-in-out infinite;
+  }
+
+  .bird-wrap.waking .bird-img,
+  .bird-wrap.patrolLeft .bird-img,
+  .bird-wrap.patrolRight .bird-img {
+    animation: none;
+    transform: none;
+  }
+
   /* ---- Shadow ---- */
   .shadow {
     position: absolute;
@@ -220,6 +231,11 @@
     45% { transform: translateX(var(--peck-x, 18px)) translateY(8px) rotate(var(--peck-rot, 13deg)) scaleX(var(--face, 1)) scaleY(0.94); }
   }
 
+  @keyframes birdSleepBreath {
+    0%,100% { transform: translateY(2px) scale(0.995, 1.01); }
+    50% { transform: translateY(5px) scale(1.008, 0.992); }
+  }
+
   @media (max-width: 620px) {
     .reset-btn {
       top: 14px;
@@ -280,6 +296,37 @@ const frameSets = {
     'assets/bird-frames/peck-02.png',
     'assets/bird-frames/peck-03.png',
     'assets/bird-frames/peck-04.png'
+  ],
+  sleeping: [
+    'assets/bird-frames/new2/sleep-01.png',
+    'assets/bird-frames/new2/sleep-02.png',
+    'assets/bird-frames/new2/sleep-03.png'
+  ],
+  waking: [
+    'assets/bird-frames/new2/ruffle-01.png',
+    'assets/bird-frames/new2/ruffle-02.png',
+    'assets/bird-frames/new2/ruffle-03.png',
+    'assets/bird-frames/new2/ruffle-04.png'
+  ],
+  patrolLeft: [
+    'assets/bird-frames/new2/walk-left-01.png',
+    'assets/bird-frames/new2/walk-left-02.png',
+    'assets/bird-frames/new2/walk-left-03.png',
+    'assets/bird-frames/new2/walk-left-04.png',
+    'assets/bird-frames/new2/walk-left-05.png',
+    'assets/bird-frames/new2/walk-left-06.png',
+    'assets/bird-frames/new2/walk-left-07.png',
+    'assets/bird-frames/new2/walk-left-08.png'
+  ],
+  patrolRight: [
+    'assets/bird-frames/new2/walk-right-01.png',
+    'assets/bird-frames/new2/walk-right-02.png',
+    'assets/bird-frames/new2/walk-right-03.png',
+    'assets/bird-frames/new2/walk-right-04.png',
+    'assets/bird-frames/new2/walk-right-05.png',
+    'assets/bird-frames/new2/walk-right-06.png',
+    'assets/bird-frames/new2/walk-right-07.png',
+    'assets/bird-frames/new2/walk-right-08.png'
   ]
 };
 
@@ -304,7 +351,13 @@ const config = {
   peckDuration: 920,
   chaseSpeed: 0.2,
   nuzzleEase: 0.13,
-  screenPadding: 72
+  screenPadding: 72,
+  inactivityDuration: 7000,
+  sleepFrameDuration: 420,
+  ruffleFrameDuration: 150,
+  patrolFrameDuration: 115,
+  patrolLegDistance: 230,
+  patrolSpeed: 58
 };
 
 const pet = {
@@ -320,8 +373,13 @@ const pet = {
   timers: new Set(),
   chaseFrame: null,
   nuzzleFrame: null,
+  patrolFrame: null,
   frameTimer: null,
-  frameIndex: 0
+  frameIndex: 0,
+  inactivityTimer: null,
+  patrolDirection: -1,
+  patrolTurnTimer: null,
+  patrolPausedForHead: false
 };
 
 function clearPetTimers() {
@@ -343,6 +401,14 @@ function setPetState(nextState) {
   birdWrap.className = `bird-wrap ${nextState}`;
   birdWrap.classList.toggle('ready', pet.ready);
   birdWrap.classList.toggle('has-frames', hasFrameSet(nextState));
+}
+
+function isPatrolState(state = pet.state) {
+  return ['patrolLeft', 'patrolRight'].includes(state);
+}
+
+function blocksLiveInteraction(state = pet.state) {
+  return ['hidden', 'hatching', 'sleeping', 'waking'].includes(state);
 }
 
 function clamp(value, min, max) {
@@ -423,9 +489,16 @@ function renderBird(options = {}) {
 function stopMotionLoops() {
   if (pet.chaseFrame) cancelAnimationFrame(pet.chaseFrame);
   if (pet.nuzzleFrame) cancelAnimationFrame(pet.nuzzleFrame);
+  if (pet.patrolFrame) cancelAnimationFrame(pet.patrolFrame);
+  if (pet.patrolTurnTimer) {
+    clearTimeout(pet.patrolTurnTimer);
+    pet.timers.delete(pet.patrolTurnTimer);
+  }
   stopFramePlayback();
   pet.chaseFrame = null;
   pet.nuzzleFrame = null;
+  pet.patrolFrame = null;
+  pet.patrolTurnTimer = null;
 }
 
 function stopFramePlayback() {
@@ -487,6 +560,33 @@ function restoreDefaultBirdImage() {
   birdImg.src = defaultBirdSrc;
 }
 
+function clearInactivityTimer() {
+  if (pet.inactivityTimer) clearTimeout(pet.inactivityTimer);
+  pet.inactivityTimer = null;
+}
+
+function scheduleSleep() {
+  clearInactivityTimer();
+  if (!pet.ready || blocksLiveInteraction()) return;
+
+  pet.inactivityTimer = setTimeout(() => {
+    pet.inactivityTimer = null;
+    enterSleep();
+  }, config.inactivityDuration);
+}
+
+function beginPetInteraction() {
+  clearInactivityTimer();
+  pet.patrolPausedForHead = false;
+}
+
+function resumePatrolAfterInteraction() {
+  if (!pet.ready) return;
+  restoreDefaultBirdImage();
+  renderBird({ scale: 1 });
+  startPatrol(pet.patrolDirection, { resetInactivity: true });
+}
+
 function moveBirdToward(target, options = {}) {
   const done = options.done || (() => {});
   const speed = options.speed || config.chaseSpeed;
@@ -521,7 +621,7 @@ function moveBirdToward(target, options = {}) {
 }
 
 function playNuzzle(pointer) {
-  if (!pet.ready || ['chase', 'peck', 'hatching'].includes(pet.state)) return;
+  if (!pet.ready || blocksLiveInteraction() || ['chase', 'peck'].includes(pet.state)) return;
 
   if (pet.state === 'nuzzle') {
     if (pointer) updateFacing(pointer.x);
@@ -532,21 +632,39 @@ function playNuzzle(pointer) {
   if (!isPointerInHeadZone(pointer)) {
     cancelNuzzleHover();
     pet.nuzzleArmed = true;
+    if (pet.patrolPausedForHead) {
+      pet.patrolPausedForHead = false;
+      startPatrol(pet.patrolDirection, { resetInactivity: true });
+    }
     return;
   }
 
-  updateFacing(pointer.x);
   if (!pet.nuzzleArmed) return;
+
+  if (isPatrolState() && !pet.patrolPausedForHead) {
+    clearInactivityTimer();
+    pet.patrolPausedForHead = true;
+    if (pet.patrolFrame) cancelAnimationFrame(pet.patrolFrame);
+    pet.patrolFrame = null;
+    if (pet.patrolTurnTimer) {
+      clearTimeout(pet.patrolTurnTimer);
+      pet.timers.delete(pet.patrolTurnTimer);
+      pet.patrolTurnTimer = null;
+    }
+    stopFramePlayback();
+  }
+
   if (pet.nuzzleHoverTimer) return;
 
   pet.nuzzleHoverTimer = setTimeout(() => {
     pet.nuzzleHoverTimer = null;
-    if (!pet.ready || pet.state !== 'idle' || !pet.nuzzleArmed || !isPointerInHeadZone(pet.pointer)) return;
+    if (!pet.ready || (!isPatrolState() && pet.state !== 'idle') || !pet.nuzzleArmed || !isPointerInHeadZone(pet.pointer)) return;
     startNuzzle(pet.pointer);
   }, config.nuzzleDwell);
 }
 
 function startNuzzle(pointer) {
+  beginPetInteraction();
   updateFacing(pointer.x);
   pet.nuzzleArmed = false;
   setPetState('nuzzle');
@@ -557,9 +675,7 @@ function startNuzzle(pointer) {
   later(() => {
     if (pet.state !== 'nuzzle') return;
     stopFramePlayback();
-    restoreDefaultBirdImage();
-    setPetState('idle');
-    renderBird({ scale: 1 });
+    resumePatrolAfterInteraction();
   }, Math.max(2, (loadedFrames.nuzzle || []).filter(Boolean).length) * config.nuzzleFrameDuration * config.nuzzleLoops);
 }
 
@@ -574,17 +690,17 @@ function playPeck(target) {
 
   later(() => {
     if (pet.state !== 'peck') return;
-    restoreDefaultBirdImage();
-    setPetState('idle');
-    renderBird({ scale: 1 });
+    resumePatrolAfterInteraction();
   }, config.peckDuration);
 }
 
 function playChaseAndPeck(target) {
-  if (!pet.ready || ['chase', 'peck', 'hatching'].includes(pet.state)) return;
+  if (!pet.ready || blocksLiveInteraction() || ['chase', 'peck'].includes(pet.state)) return;
+  beginPetInteraction();
   clearPetTimers();
   stopMotionLoops();
   cancelNuzzleHover();
+  pet.nuzzleArmed = true;
 
   const face = target.x < pet.x ? -1 : 1;
   const boundedTarget = clampPoint({
@@ -597,6 +713,99 @@ function playChaseAndPeck(target) {
     arriveDistance: 18,
     done: () => playPeck(target)
   });
+}
+
+function enterSleep() {
+  if (!pet.ready || pet.state === 'sleeping') return;
+
+  clearInactivityTimer();
+  clearPetTimers();
+  stopMotionLoops();
+  cancelNuzzleHover();
+  pet.nuzzleArmed = true;
+  pet.patrolPausedForHead = false;
+  setPetState('sleeping');
+  playFrameSet('sleeping', { duration: config.sleepFrameDuration, loop: false });
+  renderBird({ scale: 1 });
+}
+
+function walkPatrol(direction) {
+  if (!pet.ready || blocksLiveInteraction()) return;
+
+  stopFramePlayback();
+  pet.patrolDirection = direction;
+  pet.face = direction;
+  birdImg.style.setProperty('--face', direction);
+
+  const travel = Math.min(config.patrolLegDistance, Math.max(100, window.innerWidth * 0.28));
+  let targetX = clampPoint({ x: pet.x + direction * travel, y: pet.y }).x;
+
+  if (Math.abs(targetX - pet.x) < Math.min(70, travel * 0.35)) {
+    direction *= -1;
+    pet.patrolDirection = direction;
+    pet.face = direction;
+    birdImg.style.setProperty('--face', direction);
+    targetX = clampPoint({ x: pet.x + direction * travel, y: pet.y }).x;
+  }
+
+  const activeState = direction < 0 ? 'patrolLeft' : 'patrolRight';
+  setPetState(activeState);
+  playFrameSet(activeState, { duration: config.patrolFrameDuration, loop: true });
+
+  let lastTime = performance.now();
+  const step = now => {
+    if (pet.state !== activeState) return;
+
+    const remaining = targetX - pet.x;
+    const delta = Math.min(40, now - lastTime);
+    lastTime = now;
+    const movement = Math.sign(remaining) * Math.min(Math.abs(remaining), config.patrolSpeed * delta / 1000);
+    pet.x += movement;
+    renderBird({ scale: 1, lift: Math.sin(now / 90) * -2 });
+
+    if (Math.abs(remaining) <= 2) {
+      pet.x = targetX;
+      renderBird({ scale: 1 });
+      pet.patrolFrame = null;
+      pet.patrolTurnTimer = later(() => {
+        pet.patrolTurnTimer = null;
+        if (pet.state === activeState) walkPatrol(-direction);
+      }, 180);
+      return;
+    }
+
+    pet.patrolFrame = requestAnimationFrame(step);
+  };
+
+  pet.patrolFrame = requestAnimationFrame(step);
+}
+
+function startPatrol(direction = pet.patrolDirection, options = {}) {
+  if (!pet.ready || pet.state === 'sleeping') return;
+  const resetInactivity = options.resetInactivity ?? false;
+  pet.patrolPausedForHead = false;
+  stopMotionLoops();
+  setPetState('idle');
+  walkPatrol(direction || -1);
+  if (resetInactivity) scheduleSleep();
+}
+
+function wakeFromSleep() {
+  if (!pet.ready || pet.state !== 'sleeping') return;
+
+  clearInactivityTimer();
+  clearPetTimers();
+  stopMotionLoops();
+  setPetState('waking');
+  playFrameSet('waking', { duration: config.ruffleFrameDuration, loop: false });
+  renderBird({ scale: 1.02, lift: -2 });
+
+  later(() => {
+    if (pet.state !== 'waking') return;
+    stopFramePlayback();
+    renderBird({ scale: 1 });
+    startPatrol(pet.patrolDirection, { resetInactivity: true });
+  }, frameSets.waking.length * config.ruffleFrameDuration + 80);
 }
 
 function spawnBird() {
@@ -622,8 +831,8 @@ function spawnBird() {
   later(() => {
     pet.ready = true;
     birdWrap.style.transition = 'transform 0.12s linear, opacity 0.18s ease';
-    setPetState('idle');
     renderBird({ scale: 1 });
+    startPatrol(-1, { resetInactivity: true });
   }, config.hatchDuration);
 }
 
@@ -709,7 +918,7 @@ function spawnParticles() {
 
 function handlePointerMove(event) {
   pet.pointer = { x: event.clientX, y: event.clientY };
-  if (pet.ready && !['chase', 'peck', 'hatching'].includes(pet.state)) {
+  if (pet.ready && pet.state === 'idle') {
     updateFacing(pet.pointer.x);
   }
   playNuzzle(pet.pointer);
@@ -718,6 +927,7 @@ function handlePointerMove(event) {
 function handleStageClick(event) {
   if (!pet.ready) return;
   if (event.target === resetBtn) return;
+  if (blocksLiveInteraction()) return;
 
   const point = { x: event.clientX, y: event.clientY };
   const body = getBirdBodyMetrics();
@@ -732,6 +942,7 @@ function handleStageClick(event) {
 }
 
 function resetAll() {
+  clearInactivityTimer();
   clearPetTimers();
   stopMotionLoops();
   stage.querySelectorAll('.particle').forEach(p => p.remove());
@@ -743,6 +954,8 @@ function resetAll() {
   pet.face = 1;
   pet.pointer = null;
   pet.nuzzleArmed = true;
+  pet.patrolDirection = -1;
+  pet.patrolPausedForHead = false;
   cancelNuzzleHover();
 
   restoreDefaultBirdImage();
@@ -773,6 +986,9 @@ mangoWrap.addEventListener('click', event => {
 
 birdWrap.addEventListener('click', event => {
   event.stopPropagation();
+  if (pet.state === 'sleeping') {
+    wakeFromSleep();
+  }
 });
 
 stage.addEventListener('pointermove', handlePointerMove);
@@ -798,6 +1014,9 @@ window.distanceToBirdHead = distanceToBirdHead;
 window.moveBirdToward = moveBirdToward;
 window.playNuzzle = playNuzzle;
 window.playChaseAndPeck = playChaseAndPeck;
+window.enterSleep = enterSleep;
+window.wakeFromSleep = wakeFromSleep;
+window.startPatrol = startPatrol;
 
 Object.keys(frameSets).forEach(preloadFrameSet);
 resetAll();
