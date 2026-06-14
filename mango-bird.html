@@ -146,12 +146,16 @@
     z-index: 5;
     left: -16%;
     top: -14%;
-    width: clamp(44px, 6vw, 60px);
+    min-width: clamp(82px, 10vw, 98px);
+    width: auto;
     height: clamp(44px, 6vw, 60px);
-    display: grid;
-    place-items: center;
+    padding: 0 13px 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
     border: 1px solid rgba(255, 255, 255, 0.86);
-    border-radius: 50%;
+    border-radius: 999px;
     background:
       radial-gradient(circle at 31% 24%, rgba(255,255,255,0.95) 0 7%, transparent 8%),
       radial-gradient(circle at 42% 37%, rgba(255,255,255,0.5), transparent 58%),
@@ -203,10 +207,10 @@
     z-index: 6;
     left: -16%;
     top: -14%;
-    width: clamp(44px, 6vw, 60px);
+    width: clamp(82px, 10vw, 98px);
     height: clamp(44px, 6vw, 60px);
     border: 0;
-    border-radius: 50%;
+    border-radius: 999px;
     background: transparent;
     cursor: pointer;
     pointer-events: none;
@@ -218,9 +222,18 @@
   }
 
   .weather-bubble-icon {
-    font-size: clamp(26px, 4vw, 35px);
+    font-size: clamp(24px, 3.5vw, 32px);
     line-height: 1;
     filter: drop-shadow(0 2px 3px rgba(76, 58, 40, 0.12));
+  }
+
+  .weather-bubble-temperature {
+    color: #58747b;
+    font-size: clamp(13px, 1.8vw, 16px);
+    font-weight: 750;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
   }
 
   .bird-wrap.activity-jump {
@@ -863,6 +876,7 @@
     <img class="bird-img" id="birdImg" src="assets/终图_绿翅.png" alt="">
     <div class="weather-bubble" id="weatherBubble" aria-hidden="true">
       <span class="weather-bubble-icon" id="weatherBubbleIcon" aria-hidden="true"></span>
+      <span class="weather-bubble-temperature" id="weatherBubbleTemperature"></span>
       <span class="weather-bubble-spark" style="--spark-x:-34px;--spark-y:-25px"></span>
       <span class="weather-bubble-spark" style="--spark-x:3px;--spark-y:-40px;--spark-delay:.02s"></span>
       <span class="weather-bubble-spark" style="--spark-x:35px;--spark-y:-18px;--spark-delay:.04s"></span>
@@ -870,7 +884,7 @@
       <span class="weather-bubble-spark" style="--spark-x:4px;--spark-y:38px;--spark-delay:.05s"></span>
       <span class="weather-bubble-spark" style="--spark-x:-35px;--spark-y:23px;--spark-delay:.03s"></span>
     </div>
-    <button class="weather-bubble-hit" id="weatherBubbleHit" type="button" aria-label="今日天气，点击关闭"></button>
+    <button class="weather-bubble-hit" id="weatherBubbleHit" type="button" aria-label="当前天气，点击关闭"></button>
     <div class="reminder-pop" id="reminderPop" aria-live="assertive"></div>
   </div>
 
@@ -916,6 +930,7 @@ const birdWrap = $('birdWrap');
 const birdImg = $('birdImg');
 const weatherBubble = $('weatherBubble');
 const weatherBubbleIcon = $('weatherBubbleIcon');
+const weatherBubbleTemperature = $('weatherBubbleTemperature');
 const weatherBubbleHit = $('weatherBubbleHit');
 const shadow = $('shadow');
 const hint = $('hint');
@@ -1046,7 +1061,9 @@ const pet = {
 const weather = {
   loading: false,
   loaded: false,
+  fetchedAt: 0,
   visual: null,
+  temperature: null,
   description: '',
   pendingBubble: false,
   bubbleTimer: null,
@@ -2144,13 +2161,19 @@ function getWeatherVisual(code) {
 function showWeatherLoading() {
   weatherBubble.className = 'weather-bubble';
   weatherBubbleIcon.textContent = '';
+  weatherBubbleTemperature.textContent = '';
 }
 
-function showWeather(code, locationLabel) {
-  const visual = getWeatherVisual(code);
+function showWeather(current, locationLabel) {
+  const visual = getWeatherVisual(current.code);
+  const temperature = Number.isFinite(current.temperature)
+    ? Math.round(current.temperature)
+    : null;
   weather.visual = visual;
-  weather.description = `${locationLabel}今日天气：${visual.label}`;
+  weather.temperature = temperature;
+  weather.description = `${locationLabel}当前天气：${visual.label}${temperature === null ? '' : `，${temperature}°C`}`;
   weatherBubbleIcon.textContent = visual.icon;
+  weatherBubbleTemperature.textContent = temperature === null ? '--°' : `${temperature}°`;
   weatherBubble.title = weather.description;
   weatherBubbleHit.setAttribute('aria-label', `${weather.description}，点击关闭`);
 
@@ -2165,8 +2188,9 @@ function showWeatherUnavailable() {
   weatherBubble.className = 'weather-bubble';
   weatherBubbleHit.className = 'weather-bubble-hit';
   weatherBubbleIcon.textContent = '';
-  weatherBubble.title = '暂时无法获取今日天气';
-  weatherBubbleHit.setAttribute('aria-label', '暂时无法获取今日天气');
+  weatherBubbleTemperature.textContent = '';
+  weatherBubble.title = '暂时无法获取当前天气';
+  weatherBubbleHit.setAttribute('aria-label', '暂时无法获取当前天气');
 }
 
 function clearWeatherBubbleTimers() {
@@ -2194,7 +2218,8 @@ function burstWeatherBubble() {
 function spitWeatherBubble() {
   if (!pet.ready || blocksLiveInteraction()) return;
 
-  if (!weather.loaded || !weather.visual) {
+  if (!weather.loaded || !weather.visual ||
+      Date.now() - weather.fetchedAt > 10 * 60 * 1000) {
     weather.pendingBubble = true;
     loadTodayWeather();
     return;
@@ -2205,6 +2230,9 @@ function spitWeatherBubble() {
   weatherBubbleHit.className = 'weather-bubble-hit';
   weatherBubble.style.setProperty('--bubble-from-x', pet.face > 0 ? '160px' : '58px');
   weatherBubbleIcon.textContent = weather.visual.icon;
+  weatherBubbleTemperature.textContent = weather.temperature === null
+    ? '--°'
+    : `${weather.temperature}°`;
   weatherBubble.title = weather.description;
   weatherBubbleHit.setAttribute('aria-label', `${weather.description}，点击关闭`);
 
@@ -2237,9 +2265,9 @@ function requestBrowserLocation() {
       }),
       reject,
       {
-        enableHighAccuracy: false,
+        enableHighAccuracy: true,
         timeout: 7000,
-        maximumAge: 30 * 60 * 1000
+        maximumAge: 5 * 60 * 1000
       }
     );
   });
@@ -2249,9 +2277,8 @@ async function fetchTodayWeather(location) {
   const params = new URLSearchParams({
     latitude: location.latitude,
     longitude: location.longitude,
-    daily: 'weather_code',
-    timezone: 'auto',
-    forecast_days: '1'
+    current: 'weather_code,temperature_2m',
+    timezone: 'auto'
   });
   const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
 
@@ -2260,17 +2287,22 @@ async function fetchTodayWeather(location) {
   }
 
   const data = await response.json();
-  const code = data.daily?.weather_code?.[0];
+  const code = data.current?.weather_code;
   if (!Number.isFinite(code)) {
     throw new Error('Weather code is missing');
   }
 
-  return code;
+  return {
+    code,
+    temperature: data.current?.temperature_2m
+  };
 }
 
 async function loadTodayWeather() {
-  if (weather.loading || weather.loaded) return;
+  if (weather.loading) return;
+  if (weather.loaded && Date.now() - weather.fetchedAt <= 10 * 60 * 1000) return;
 
+  weather.loaded = false;
   weather.loading = true;
   showWeatherLoading();
 
@@ -2282,15 +2314,17 @@ async function loadTodayWeather() {
   }
 
   try {
-    const code = await fetchTodayWeather(location);
+    const current = await fetchTodayWeather(location);
     weather.loaded = true;
-    showWeather(code, location.label);
+    weather.fetchedAt = Date.now();
+    showWeather(current, location.label);
   } catch {
     if (location !== fallbackWeatherLocation) {
       try {
-        const code = await fetchTodayWeather(fallbackWeatherLocation);
+        const current = await fetchTodayWeather(fallbackWeatherLocation);
         weather.loaded = true;
-        showWeather(code, fallbackWeatherLocation.label);
+        weather.fetchedAt = Date.now();
+        showWeather(current, fallbackWeatherLocation.label);
         return;
       } catch {
         // Keep the unobtrusive unavailable indicator below.
@@ -2889,7 +2923,11 @@ birdWrap.addEventListener('click', event => {
   if (weatherBubbleHit.contains(event.target)) return;
   if (reminderTimer.dialogOpen && pet.state === 'dialogPerch') {
     if (['running', 'paused'].includes(reminderTimer.pomodoroState)) {
-      expandTimerMenu();
+      if (timerDialog.classList.contains('timer-menu-expanded')) {
+        showCollapsedTimerPanel();
+      } else {
+        expandTimerMenu();
+      }
       return;
     }
     if (pet.singleClickTimer) clearTimeout(pet.singleClickTimer);
