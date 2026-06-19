@@ -24,6 +24,57 @@
     touch-action: none;
   }
 
+  .stage.closed {
+    display: none;
+  }
+
+  .mango-context-menu {
+    position: absolute;
+    z-index: 9;
+    right: -32%;
+    top: calc(38% - 3px);
+    min-width: 72px;
+    padding: 8px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.86);
+    border-radius: 20px;
+    background: rgba(246, 251, 253, 0.94);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      inset 0 -5px 12px rgba(205, 222, 230, 0.16),
+      0 0 12px rgba(235, 248, 252, 0.46),
+      0 9px 22px rgba(68, 75, 78, 0.12);
+    opacity: 0;
+    transform: translate(-82px, 55px) scale(0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .mango-context-menu[hidden] {
+    display: none;
+  }
+
+  .mango-context-menu button {
+    width: 100%;
+    min-height: 22px;
+    border: 0;
+    background: transparent;
+    color: #687174;
+    font: inherit;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    text-align: center;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .mango-context-menu button:hover {
+    color: #4e5a5e;
+  }
+
+  .mango-context-menu.visible {
+    animation: mangoMenuPopIn 0.58s cubic-bezier(0.2, 0.9, 0.24, 1.2) forwards;
+  }
+
   /* ---- Mango ---- */
   .mango-wrap {
     position: absolute;
@@ -144,30 +195,54 @@
   .weather-bubble {
     position: absolute;
     z-index: 5;
-    left: -16%;
-    top: -14%;
-    min-width: clamp(82px, 10vw, 98px);
-    width: auto;
-    height: clamp(44px, 6vw, 60px);
-    padding: 0 13px 0 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
+    left: -25%;
+    top: -16%;
+    width: clamp(50px, 6vw, 60px);
+    min-width: 0;
+    height: clamp(50px, 6vw, 60px);
+    padding: 0 5px;
+    display: block;
     border: 1px solid rgba(255, 255, 255, 0.86);
-    border-radius: 999px;
+    border-radius: 50%;
     background:
       radial-gradient(circle at 31% 24%, rgba(255,255,255,0.95) 0 7%, transparent 8%),
-      radial-gradient(circle at 42% 37%, rgba(255,255,255,0.5), transparent 58%),
-      rgba(238, 249, 251, 0.7);
+      radial-gradient(circle at 42% 37%, rgba(255,255,255,0.38), transparent 58%),
+      rgba(238, 249, 251, 0.52);
     box-shadow:
-      inset -5px -7px 12px rgba(129, 183, 205, 0.12),
+      inset -5px -7px 12px rgba(129, 183, 205, 0.08),
       0 7px 18px rgba(86, 115, 128, 0.17);
     backdrop-filter: blur(7px);
     pointer-events: none;
     opacity: 0;
     transform: translate(var(--bubble-from-x, 160px), 62px) scale(0.12);
     transform-origin: center;
+  }
+
+  .weather-bubble::before {
+    content: "";
+    position: absolute;
+    left: auto;
+    right: -6px;
+    bottom: 8px;
+    width: 13px;
+    height: 13px;
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    border-radius: 50%;
+    background: inherit;
+    box-shadow: 0 3px 7px rgba(86, 115, 128, 0.08);
+  }
+
+  .weather-bubble::after {
+    content: "";
+    position: absolute;
+    left: auto;
+    right: -13px;
+    bottom: 2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(241, 250, 251, 0.8);
+    box-shadow: 0 2px 5px rgba(86, 115, 128, 0.08);
   }
 
   .weather-bubble.spitting {
@@ -205,10 +280,10 @@
   .weather-bubble-hit {
     position: absolute;
     z-index: 6;
-    left: -16%;
-    top: -14%;
-    width: clamp(82px, 10vw, 98px);
-    height: clamp(44px, 6vw, 60px);
+    left: -25%;
+    top: -16%;
+    width: clamp(50px, 6vw, 60px);
+    height: clamp(50px, 6vw, 60px);
     border: 0;
     border-radius: 999px;
     background: transparent;
@@ -222,37 +297,46 @@
   }
 
   .weather-bubble-icon {
-    font-size: clamp(24px, 3.5vw, 32px);
+    position: absolute;
+    left: 48%;
+    top: 45%;
+    font-size: clamp(23px, 3.2vw, 29px);
     line-height: 1;
     filter: drop-shadow(0 2px 3px rgba(76, 58, 40, 0.12));
+    transform: translate(-50%, -50%);
   }
 
   .weather-bubble-temperature {
+    position: absolute;
+    right: 7px;
+    bottom: 7px;
     color: #58747b;
-    font-size: clamp(13px, 1.8vw, 16px);
+    font-size: clamp(9px, 1.2vw, 11px);
     font-weight: 750;
     line-height: 1;
     font-variant-numeric: tabular-nums;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
-  }
-
-  .bird-wrap.activity-jump {
-    animation: birdActivityJump 0.62s ease-in-out 3;
+    transform: rotate(-12deg);
+    transform-origin: center;
   }
 
   .reminder-pop {
     position: absolute;
     z-index: 7;
-    left: -24%;
-    top: -16%;
+    left: -32%;
+    top: calc(-30% + 11px);
     min-width: 58px;
     max-width: 190px;
     padding: 11px 14px;
     border: 1px solid rgba(255, 255, 255, 0.9);
-    border-radius: 16px;
-    background: rgba(255, 249, 240, 0.94);
-    box-shadow: 0 9px 22px rgba(86, 67, 48, 0.17);
-    color: #674d3b;
+    border-radius: 22px;
+    background: rgba(246, 251, 253, 0.94);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.82),
+      inset 0 -5px 12px rgba(205, 222, 230, 0.16),
+      0 0 12px rgba(235, 248, 252, 0.46),
+      0 9px 22px rgba(68, 75, 78, 0.12);
+    color: #5d6b70;
     pointer-events: none;
     opacity: 0;
     transform: translate(82px, 55px) scale(0.2);
@@ -273,14 +357,14 @@
     min-width: 58px;
     min-height: 58px;
     padding: 8px;
-    border-radius: 18px;
+    border-radius: 22px;
     font-size: 2rem;
   }
 
   .reminder-pop.custom {
-    border-radius: 12px;
+    border-radius: 20px;
     line-height: 1.45;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     word-break: break-word;
   }
 
@@ -290,14 +374,16 @@
     z-index: 30;
     width: min(304px, calc(100vw - 28px));
     padding: 18px;
-    border: 1px solid rgba(222, 255, 253, 0.34);
+    border: 1px solid rgba(226, 198, 178, 0.42);
     border-radius: 22px;
     background:
-      linear-gradient(145deg, rgba(229, 255, 253, 0.13), rgba(190, 239, 238, 0.05)),
-      rgba(207, 246, 245, 0.035);
+      radial-gradient(circle at 82% 8%, rgba(244, 178, 143, 0.2), transparent 34%),
+      linear-gradient(145deg, rgba(229, 255, 251, 0.22), rgba(185, 232, 226, 0.09)),
+      rgba(215, 244, 239, 0.08);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.32),
-      0 14px 34px rgba(72, 126, 123, 0.075);
+      inset 0 1px 0 rgba(255, 255, 255, 0.42),
+      0 14px 34px rgba(72, 126, 123, 0.08),
+      0 4px 18px rgba(207, 125, 88, 0.035);
     backdrop-filter: blur(20px) saturate(1.08);
     -webkit-backdrop-filter: blur(20px) saturate(1.08);
     color: #597674;
@@ -329,6 +415,218 @@
   .bird-dialog h2 {
     font-size: 0.96rem;
     line-height: 1.35;
+  }
+
+  .dialog-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-right: 88px;
+    margin-bottom: 12px;
+    padding: 3px;
+    border: 1px solid rgba(211, 180, 159, 0.4);
+    border-radius: 13px;
+    background:
+      linear-gradient(90deg, rgba(237, 252, 248, 0.54), rgba(252, 230, 216, 0.38));
+  }
+
+  .dialog-tab {
+    min-height: 31px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: #72908e;
+    font: inherit;
+    font-size: 0.76rem;
+    cursor: pointer !important;
+  }
+
+  .dialog-tab.active {
+    background: rgba(250, 218, 199, 0.72);
+    box-shadow: 0 3px 10px rgba(172, 104, 72, 0.09);
+    color: #87604f;
+    font-weight: 700;
+  }
+
+  .dialog-view[hidden] {
+    display: none;
+  }
+
+  .chat-view {
+    min-height: 330px;
+  }
+
+  .chat-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .chat-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.9rem !important;
+  }
+
+  .chat-title-avatar {
+    width: 34px;
+    height: 30px;
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 0;
+    object-fit: contain;
+  }
+
+  .chat-clear {
+    border: 0;
+    background: transparent;
+    color: #8aa09e;
+    font-size: 0.68rem;
+    cursor: pointer !important;
+  }
+
+  .chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    height: 227px;
+    margin-top: 10px;
+    padding: 4px 3px 4px 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(145, 196, 191, 0.5) transparent;
+  }
+
+  .chat-empty {
+    margin: auto;
+    max-width: 210px;
+    color: #89a09d;
+    font-size: 0.76rem;
+    line-height: 1.55;
+    text-align: center;
+  }
+
+  .chat-message {
+    max-width: 88%;
+    padding: 8px 10px;
+    border-radius: 13px;
+    font-size: 0.76rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    user-select: text;
+  }
+
+  .chat-message.user {
+    align-self: flex-end;
+    border-bottom-right-radius: 5px;
+    background: rgba(188, 231, 226, 0.62);
+    color: #496c69;
+  }
+
+  .chat-message.assistant {
+    align-self: flex-start;
+    border-bottom-left-radius: 5px;
+    background: rgba(255, 253, 249, 0.66);
+    color: #6f675e;
+  }
+
+  .chat-message.pending {
+    color: #849693;
+    animation: hintPulse 1.2s infinite;
+  }
+
+  .chat-form {
+    display: grid;
+    grid-template-columns: 1fr 38px;
+    gap: 7px;
+    margin-top: 10px;
+  }
+
+  .chat-input {
+    width: 100%;
+    height: 42px;
+    min-height: 42px;
+    max-height: 92px;
+    padding: 10px;
+    border: 1px solid rgba(157, 211, 205, 0.72);
+    border-radius: 12px;
+    outline: none;
+    resize: none;
+    background: rgba(238, 253, 250, 0.58);
+    color: #486d69;
+    font: inherit;
+    font-size: 0.78rem;
+    line-height: 20px;
+    user-select: text;
+  }
+
+  .chat-input:focus {
+    border-color: rgba(132, 201, 194, 0.82);
+    background: rgba(228, 250, 246, 0.76);
+  }
+
+  .bird-dialog.chat-mode .chat-input {
+    border-color: rgba(219, 211, 174, 0.5);
+    background: rgba(255, 253, 241, 0.74);
+    color: #526f6c;
+  }
+
+  .bird-dialog.chat-mode .chat-input:focus {
+    border-color: rgba(211, 201, 163, 0.56);
+    background: rgba(255, 252, 237, 0.78);
+  }
+
+  .bird-dialog.chat-mode .chat-input::placeholder {
+    color: #9f9b88;
+  }
+
+  .chat-send {
+    display: inline-grid;
+    place-items: center;
+    width: 38px;
+    padding: 0;
+    border: 1px solid rgba(146, 207, 201, 0.62);
+    border-radius: 12px;
+    background: rgba(182, 230, 225, 0.64);
+    color: #476d69;
+    font-size: 1rem;
+    cursor: pointer !important;
+  }
+
+  .chat-send:disabled {
+    cursor: wait !important;
+    opacity: 0.5;
+  }
+
+  .bird-dialog.chat-mode .chat-send {
+    border-color: rgba(211, 197, 150, 0.62);
+    background: rgba(248, 241, 211, 0.9);
+    color: #8b7946;
+  }
+
+  .chat-send svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    transform: translate(1px, -1px) rotate(-45deg);
+    transform-origin: center;
+  }
+
+  .chat-error {
+    min-height: 17px;
+    margin-top: 4px;
+    color: #aa6659;
+    font-size: 0.68rem;
   }
 
   .bird-dialog-copy {
@@ -388,12 +686,23 @@
     letter-spacing: 0.03em;
   }
 
+  .timer-option-phase {
+    display: none;
+    margin-bottom: 2px;
+    color: #668a84;
+    font-size: 0.66rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+  }
+
   .bird-dialog.timer-running {
     width: min(142px, calc(100vw - 28px));
     padding: 12px;
   }
 
   .bird-dialog.timer-running h2,
+  .bird-dialog.timer-running .dialog-tabs,
+  .bird-dialog.timer-running .chat-view,
   .bird-dialog.timer-running .custom-reminder,
   .bird-dialog.timer-running .memo-list,
   .bird-dialog.timer-running .timer-option:not(.active-timer) {
@@ -420,6 +729,11 @@
   .bird-dialog.timer-running .timer-option-countdown,
   .bird-dialog.timer-menu-expanded .timer-option.active-timer .timer-option-countdown {
     display: inline;
+  }
+
+  .bird-dialog.timer-running .timer-option-phase,
+  .bird-dialog.timer-menu-expanded .timer-option.active-timer .timer-option-phase {
+    display: block;
   }
 
   .bird-dialog.timer-menu-expanded .timer-option:not(.active-timer) {
@@ -476,8 +790,38 @@
   }
 
   .custom-reminder-fields {
+    display: grid;
+    grid-template-columns: 1fr 38px;
+    gap: 7px;
     width: 100%;
     margin-top: 8px;
+  }
+
+  .custom-reminder-submit {
+    display: inline-grid;
+    place-items: center;
+    width: 38px;
+    padding: 0;
+    border: 1px solid rgba(146, 207, 201, 0.62);
+    border-radius: 12px;
+    background: rgba(182, 230, 225, 0.64);
+    color: #476d69;
+    font-size: 1rem;
+    cursor: pointer !important;
+  }
+
+  .custom-reminder-submit svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    transform: translate(1px, -1px) rotate(-45deg);
+    transform-origin: center;
   }
 
   .custom-reminder textarea {
@@ -828,9 +1172,10 @@
     to { opacity: 0; transform: translateY(-8px) scale(0.84); }
   }
 
-  @keyframes birdActivityJump {
-    0%, 100% { transform: translate(-50%, -50%) translate3d(var(--bird-x), var(--bird-y), 0) scale(1); }
-    48% { transform: translate(-50%, -50%) translate3d(var(--bird-x), calc(var(--bird-y) - 34px), 0) scale(1.03); }
+  @keyframes mangoMenuPopIn {
+    0% { opacity: 0; transform: translate(-82px, 55px) scale(0.2); }
+    72% { opacity: 1; transform: translate(4px, -3px) scale(1.06); }
+    100% { opacity: 1; transform: translate(0, 0) scale(1); }
   }
 
   @media (max-width: 620px) {
@@ -886,38 +1231,75 @@
     </div>
     <button class="weather-bubble-hit" id="weatherBubbleHit" type="button" aria-label="当前天气，点击关闭"></button>
     <div class="reminder-pop" id="reminderPop" aria-live="assertive"></div>
+    <div class="mango-context-menu" id="mangoContextMenu" hidden role="menu" aria-label="Mango 菜单">
+      <button id="closeMango" type="button" role="menuitem">回巢</button>
+    </div>
   </div>
 
   <div class="hint" id="hint">点一下芒果</div>
   <button class="timer-badge" id="timerBadge" type="button" hidden aria-label="查看当前计时">
     <span class="timer-badge-label" id="timerBadgeLabel">正在计时</span>
-    <strong class="timer-badge-time" id="timerBadgeTime">30:00</strong>
+    <strong class="timer-badge-time" id="timerBadgeTime">25:00</strong>
   </button>
 
-  <section class="bird-dialog" id="timerDialog" role="dialog" aria-modal="false" aria-labelledby="timerDialogTitle" hidden>
-    <h2 id="timerDialogTitle">🍅 番茄钟 <span class="tomato-progress" id="tomatoProgress" aria-label="已完成番茄钟"></span></h2>
-    <div class="timer-options">
-      <button class="timer-option" type="button" data-focus-minutes="30" data-rest-minutes="5" data-focus-ms="10000" data-rest-ms="5000" data-display-label="10s/5s" data-initial-countdown="0:10" data-tomato-halves="1">
-        <strong class="timer-option-label">10s/5s</strong>
-        <span class="timer-option-countdown">⌛️ 0:10</span>
-      </button>
-      <button class="timer-option" type="button" data-focus-minutes="60" data-rest-minutes="10" data-tomato-halves="2">
-        <strong class="timer-option-label">60/10</strong>
-        <span class="timer-option-countdown">⌛️ 60:00</span>
-      </button>
-      <div class="timer-pause-actions" id="timerPauseActions">
-        <button class="timer-pause-action continue" id="timerContinue" type="button">继续</button>
-        <button class="timer-pause-action cancel" id="timerCancel" type="button">取消</button>
-      </div>
+  <section class="bird-dialog" id="timerDialog" role="dialog" aria-modal="false" aria-label="芒果小鸟工具" hidden>
+    <div class="dialog-tabs" role="tablist" aria-label="小鸟工具">
+      <button class="dialog-tab active" id="chatTab" type="button" role="tab" aria-selected="true" data-dialog-view="chat">问小鸟</button>
+      <button class="dialog-tab" id="timerTab" type="button" role="tab" aria-selected="false" data-dialog-view="timer">计时提醒</button>
     </div>
-    <form class="custom-reminder" id="customReminderForm">
-      <div class="custom-reminder-title">⏰ 提醒我</div>
-      <div class="custom-reminder-fields">
-        <textarea id="customReminderText" rows="1" maxlength="80" placeholder="例如：明天早上9点开会" aria-label="提醒内容和时间"></textarea>
+    <div class="dialog-view chat-view" id="chatView" role="tabpanel">
+      <div class="chat-heading">
+        <h2 class="chat-title">
+          <img class="chat-title-avatar" src="assets/mango-chat-avatar.png" alt="">
+          <span>有什么想问的？</span>
+        </h2>
+        <button class="chat-clear" id="chatClear" type="button">清空对话</button>
       </div>
-      <div class="custom-reminder-error" id="customReminderError" aria-live="polite"></div>
-    </form>
-    <div class="memo-list" id="memoList" aria-label="待办事项"></div>
+      <div class="chat-messages" id="chatMessages" aria-live="polite">
+        <div class="chat-empty">临时遇到知识问题就问我吧。<br>这次页面关闭后，我就不记得啦。</div>
+      </div>
+      <form class="chat-form" id="chatForm">
+        <textarea class="chat-input" id="chatInput" rows="1" maxlength="1200" placeholder="问一个问题…" aria-label="给小鸟的问题"></textarea>
+        <button class="chat-send" id="chatSend" type="submit" aria-label="发送">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m3.5 4.5 17 7.5-17 7.5 3.2-7.5-3.2-7.5Z"></path>
+          </svg>
+        </button>
+      </form>
+      <div class="chat-error" id="chatError" aria-live="polite"></div>
+    </div>
+    <div class="dialog-view timer-view" id="timerView" role="tabpanel" hidden>
+      <h2 id="timerDialogTitle">🍅 番茄钟 <span class="tomato-progress" id="tomatoProgress" aria-label="已完成番茄钟"></span></h2>
+      <div class="timer-options">
+        <button class="timer-option" type="button" data-focus-minutes="25" data-rest-minutes="5" data-tomato-halves="1">
+          <strong class="timer-option-label">25/5</strong>
+          <span class="timer-option-phase">专注中</span>
+          <span class="timer-option-countdown">⌛️ 25:00</span>
+        </button>
+        <button class="timer-option" type="button" data-focus-minutes="50" data-rest-minutes="10" data-tomato-halves="2">
+          <strong class="timer-option-label">50/10</strong>
+          <span class="timer-option-phase">专注中</span>
+          <span class="timer-option-countdown">⌛️ 50:00</span>
+        </button>
+        <div class="timer-pause-actions" id="timerPauseActions">
+          <button class="timer-pause-action continue" id="timerContinue" type="button">继续</button>
+          <button class="timer-pause-action cancel" id="timerCancel" type="button">取消</button>
+        </div>
+      </div>
+      <form class="custom-reminder" id="customReminderForm">
+        <div class="custom-reminder-title">⏰ 提醒我</div>
+        <div class="custom-reminder-fields">
+          <textarea id="customReminderText" rows="1" maxlength="80" placeholder="例如：明天早上9点开会" aria-label="提醒内容和时间"></textarea>
+          <button class="custom-reminder-submit" type="submit" aria-label="添加提醒">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m3.5 4.5 17 7.5-17 7.5 3.2-7.5-3.2-7.5Z"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="custom-reminder-error" id="customReminderError" aria-live="polite"></div>
+      </form>
+      <div class="memo-list" id="memoList" aria-label="待办事项"></div>
+    </div>
   </section>
 
   <button class="reset-btn" id="resetBtn" type="button">再来一次</button>
@@ -934,12 +1316,24 @@ const weatherBubbleTemperature = $('weatherBubbleTemperature');
 const weatherBubbleHit = $('weatherBubbleHit');
 const shadow = $('shadow');
 const hint = $('hint');
+const mangoContextMenu = $('mangoContextMenu');
+const closeMango = $('closeMango');
 const resetBtn = $('resetBtn');
 const stage = $('stage');
 const timerBadge = $('timerBadge');
 const timerBadgeLabel = $('timerBadgeLabel');
 const timerBadgeTime = $('timerBadgeTime');
 const timerDialog = $('timerDialog');
+const chatTab = $('chatTab');
+const timerTab = $('timerTab');
+const chatView = $('chatView');
+const timerView = $('timerView');
+const chatMessages = $('chatMessages');
+const chatForm = $('chatForm');
+const chatInput = $('chatInput');
+const chatSend = $('chatSend');
+const chatClear = $('chatClear');
+const chatError = $('chatError');
 const tomatoProgress = $('tomatoProgress');
 const reminderPop = $('reminderPop');
 const customReminderForm = $('customReminderForm');
@@ -954,8 +1348,10 @@ const defaultDocumentTitle = document.title;
 const fallbackWeatherLocation = {
   latitude: 31.2304,
   longitude: 121.4737,
-  label: '上海（默认位置）'
+  label: '上海（后备位置）'
 };
+const weatherRefreshMs = 2 * 60 * 1000;
+const weatherLocationMaxAgeMs = 60 * 1000;
 
 const weatherVisuals = [
   { codes: [0], icon: '☀️', label: '晴' },
@@ -1091,10 +1487,22 @@ const reminderTimer = {
   activeButton: null,
   completedHalves: 0,
   dialogPosition: null,
-  dialogDrag: null
+  dialogDrag: null,
+  birdDialogDrag: null,
+  suppressBirdClick: false
 };
 
 const reminderMemos = [];
+const chat = {
+  messages: [],
+  pending: false,
+  controller: null
+};
+const dailyMangoReset = {
+  timer: null,
+  hour: 6
+};
+let mangoClosed = false;
 
 function clearPetTimers() {
   pet.timers.forEach(timer => clearTimeout(timer));
@@ -1214,6 +1622,7 @@ function updateReminderCountdown() {
   );
 
   if (reminderTimer.activeButton) {
+    updateTimerPhaseLabel();
     const countdown = reminderTimer.activeButton.querySelector('.timer-option-countdown');
     if (countdown) countdown.textContent = `⌛️ ${formatRemainingTime(remaining)}`;
     reminderTimer.activeButton.style.setProperty('--timer-progress', `${progress * 100}%`);
@@ -1224,12 +1633,29 @@ function updateReminderCountdown() {
   }
 }
 
+function updateTimerPhaseLabel() {
+  if (!reminderTimer.activeButton) return;
+  const phase = reminderTimer.activeButton.querySelector('.timer-option-phase');
+  if (!phase) return;
+  if (reminderTimer.pomodoroState === 'paused') {
+    phase.textContent = '已暂停';
+  } else if (reminderTimer.pomodoroPhase === 'restPending') {
+    phase.textContent = '';
+  } else if (reminderTimer.pomodoroPhase === 'rest') {
+    phase.textContent = '休息中';
+  } else {
+    phase.textContent = '专注中';
+  }
+}
+
 function resetTimerPanel() {
   timerDialog.classList.remove('timer-running', 'timer-paused', 'timer-menu-expanded');
   timerOptionButtons.forEach(button => {
     button.classList.remove('active-timer');
     button.style.setProperty('--timer-progress', '0%');
     const countdown = button.querySelector('.timer-option-countdown');
+    const phase = button.querySelector('.timer-option-phase');
+    if (phase) phase.textContent = '专注中';
     if (countdown) {
       countdown.textContent = `⌛️ ${button.dataset.initialCountdown ?? `${button.dataset.focusMinutes}:00`}`;
     }
@@ -1238,6 +1664,7 @@ function resetTimerPanel() {
 }
 
 function showCollapsedTimerPanel() {
+  setDialogView('timer');
   timerDialog.classList.add('timer-running');
   timerDialog.classList.remove('timer-menu-expanded');
   syncTimerDialogAndPerch();
@@ -1245,6 +1672,7 @@ function showCollapsedTimerPanel() {
 
 function expandTimerMenu() {
   if (!['running', 'paused'].includes(reminderTimer.pomodoroState)) return;
+  setDialogView('timer');
   timerDialog.classList.remove('timer-running', 'timer-paused');
   timerDialog.classList.add('timer-menu-expanded');
   syncTimerDialogAndPerch();
@@ -1259,6 +1687,7 @@ function pausePomodoroTimer() {
   reminderTimer.timeout = null;
   reminderTimer.tickInterval = null;
   updateReminderCountdown();
+  updateTimerPhaseLabel();
   timerDialog.classList.add('timer-running', 'timer-paused');
   timerDialog.classList.remove('timer-menu-expanded');
   syncTimerDialogAndPerch();
@@ -1275,6 +1704,7 @@ function resumePomodoroTimer() {
   reminderTimer.pomodoroEndAt += pausedDuration;
   reminderTimer.pausedAt = 0;
   reminderTimer.pomodoroState = 'running';
+  updateTimerPhaseLabel();
   timerDialog.classList.remove('timer-paused');
   scheduleNextReminder();
   reminderTimer.tickInterval = setInterval(updateReminderCountdown, 200);
@@ -1288,6 +1718,100 @@ function syncTimerDialogAndPerch() {
   pet.x = perchPoint.x;
   pet.y = perchPoint.y;
   renderBird({ scale: 0.65 });
+}
+
+function setDialogView(view) {
+  const showChat = view === 'chat';
+  timerDialog.classList.toggle('chat-mode', showChat);
+  chatView.hidden = !showChat;
+  timerView.hidden = showChat;
+  chatTab.classList.toggle('active', showChat);
+  timerTab.classList.toggle('active', !showChat);
+  chatTab.setAttribute('aria-selected', String(showChat));
+  timerTab.setAttribute('aria-selected', String(!showChat));
+  requestAnimationFrame(() => {
+    syncTimerDialogAndPerch();
+    if (showChat) chatInput.focus();
+  });
+}
+
+function renderChatMessages() {
+  chatMessages.replaceChildren();
+  if (chat.messages.length === 0 && !chat.pending) {
+    const empty = document.createElement('div');
+    empty.className = 'chat-empty';
+    empty.innerHTML = '临时遇到知识问题就问我吧。<br>这次页面关闭后，我就不记得啦。';
+    chatMessages.appendChild(empty);
+    return;
+  }
+
+  chat.messages.forEach(message => {
+    const bubble = document.createElement('div');
+    bubble.className = `chat-message ${message.role}`;
+    bubble.textContent = message.content;
+    chatMessages.appendChild(bubble);
+  });
+
+  if (chat.pending) {
+    const pending = document.createElement('div');
+    pending.className = 'chat-message assistant pending';
+    pending.textContent = '小鸟正在想…';
+    chatMessages.appendChild(pending);
+  }
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function clearChat() {
+  if (chat.controller) chat.controller.abort();
+  chat.controller = null;
+  chat.pending = false;
+  chat.messages = [];
+  chatError.textContent = '';
+  chatForm.reset();
+  renderChatMessages();
+}
+
+async function askBird(question) {
+  if (chat.pending) return;
+  chat.messages.push({ role: 'user', content: question });
+  chat.messages = chat.messages.slice(-12);
+  chat.pending = true;
+  chatError.textContent = '';
+  chatSend.disabled = true;
+  renderChatMessages();
+
+  const controller = new AbortController();
+  chat.controller = controller;
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: chat.messages,
+        model: 'deepseek-v4-flash',
+        mode: 'fast'
+      }),
+      signal: controller.signal
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.error || '暂时没有收到回答，请稍后再试。');
+    }
+    chat.messages.push({ role: 'assistant', content: result.message });
+    chat.messages = chat.messages.slice(-12);
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      chatError.textContent = error.message === 'Failed to fetch'
+        ? '聊天服务未启动，请使用 mango-bird-server.py 打开页面。'
+        : error.message;
+    }
+  } finally {
+    if (chat.controller === controller) chat.controller = null;
+    chat.pending = false;
+    chatSend.disabled = false;
+    renderChatMessages();
+    chatInput.focus();
+  }
 }
 
 function updateDraggedTimerDialog(clientX, clientY) {
@@ -1361,22 +1885,37 @@ function sendReminderNotification(item) {
 const customReminderPopDuration = 5000;
 
 function makeCuteReminderText(eventName, randomValue = Math.random()) {
+  const reminderEmojis = ['💧', '🌿', '☀️', '✨', '🍵', '🌼'];
+  const emojiIndex = Math.min(
+    reminderEmojis.length - 1,
+    Math.floor(Math.max(0, randomValue * 1.73 % 1) * reminderEmojis.length)
+  );
+  const emoji = randomValue < 0.42 ? ` ${reminderEmojis[emojiIndex]}` : '';
+  if (/(喝水|饮水|补水)/.test(eventName)) {
+    return `啾～该喝水啦${emoji}`;
+  }
   const templates = [
-    event => `啾啾，到时间啦～ ${event}`,
-    event => `小鸟来报时啦～ 记得${event}`,
-    event => `轻轻提醒一下～ 该${event}啦`,
-    event => `叮咚～ ${event}时间到`,
-    event => `芒果小鸟说：别忘了${event}呀～`
+    event => `该${event}啦～`,
+    event => `${event}时间到啦～`,
+    event => `啾～该${event}啦`
   ];
   const index = Math.min(
     templates.length - 1,
     Math.floor(Math.max(0, randomValue) * templates.length)
   );
-  return templates[index](eventName);
+  return `${templates[index](eventName)}${emoji}`;
 }
 
 function showReminderPop(content, type = 'custom', duration = customReminderPopDuration) {
   if (reminderTimer.popTimer) clearTimeout(reminderTimer.popTimer);
+  if (pet.state === 'sleeping') {
+    wakeFromSleep();
+    reminderTimer.popTimer = setTimeout(() => {
+      reminderTimer.popTimer = null;
+      showReminderPop(content, type, duration);
+    }, frameSets.waking.length * config.ruffleFrameDuration + 120);
+    return;
+  }
   clearWeatherBubbleTimers();
   weatherBubble.className = 'weather-bubble';
   weatherBubbleHit.className = 'weather-bubble-hit';
@@ -1391,32 +1930,6 @@ function showReminderPop(content, type = 'custom', duration = customReminderPopD
       reminderPop.textContent = '';
     }, 300);
   }, duration);
-}
-
-function jumpBirdThreeTimes() {
-  const startJump = () => {
-    beginPetInteraction();
-    if (pet.state !== 'idle') {
-      clearPetTimers();
-      stopMotionLoops();
-      returnToIdle({ resetInactivity: false });
-    }
-    birdWrap.classList.remove('activity-jump');
-    void birdWrap.offsetWidth;
-    birdWrap.classList.add('activity-jump');
-    setTimeout(() => {
-      birdWrap.classList.remove('activity-jump');
-      renderBird({ scale: 1 });
-      scheduleHeadBlink();
-    }, 1950);
-  };
-
-  if (pet.state === 'sleeping') {
-    wakeFromSleep();
-    setTimeout(startJump, frameSets.waking.length * config.ruffleFrameDuration + 120);
-  } else {
-    startJump();
-  }
 }
 
 function handleReminderEvent(item) {
@@ -1452,11 +1965,12 @@ function finishReminderTimer() {
   reminderTimer.timeout = null;
   reminderTimer.active = reminderTimer.queue.length > 0;
   if (nextReminder.type === 'focusEnd') {
-    showReminderPop('该休息啦～', 'custom', 3000);
+    showReminderPop('该休息啦～', 'custom', 5000);
     reminderTimer.pomodoroPhase = 'restPending';
+    updateTimerPhaseLabel();
     reminderTimer.phaseStartedAt = Date.now();
-    reminderTimer.phaseDuration = 3000;
-    reminderTimer.phaseEndAt = reminderTimer.phaseStartedAt + 3000;
+    reminderTimer.phaseDuration = 5000;
+    reminderTimer.phaseEndAt = reminderTimer.phaseStartedAt + 5000;
     if (reminderTimer.activeButton) {
       const countdown = reminderTimer.activeButton.querySelector('.timer-option-countdown');
       if (countdown) countdown.textContent = '⌛️ 0:00';
@@ -1469,6 +1983,7 @@ function finishReminderTimer() {
       if (reminderTimer.pomodoroPhase !== 'restPending') return;
       const restStartedAt = Date.now();
       reminderTimer.pomodoroPhase = 'rest';
+      updateTimerPhaseLabel();
       reminderTimer.phaseStartedAt = restStartedAt;
       reminderTimer.phaseDuration = nextReminder.restMs;
       reminderTimer.phaseEndAt = restStartedAt + nextReminder.restMs;
@@ -1480,7 +1995,7 @@ function finishReminderTimer() {
       reminderTimer.tickInterval = setInterval(updateReminderCountdown, 200);
       updateReminderCountdown();
       if (reminderTimer.active) scheduleNextReminder();
-    }, 3000);
+    }, 5000);
     return;
   }
 
@@ -1658,19 +2173,19 @@ function stopPomodoroTimer() {
   refreshReminderSchedule();
   timerDialog.hidden = false;
   reminderTimer.dialogOpen = true;
+  setDialogView('timer');
   syncTimerDialogAndPerch();
 }
 
 function startReminderTimer(option) {
   const focusMs = option.focusMs ?? option.focusMinutes * 60 * 1000;
   const restMs = option.restMs ?? option.restMinutes * 60 * 1000;
-  const movementDelayMs = option.movementDelayMs ?? 3 * 60 * 60 * 1000;
   if (!Number.isFinite(focusMs) || focusMs <= 0 || !Number.isFinite(restMs) || restMs <= 0) return;
   const focusMinutes = option.focusMinutes ?? Math.round(focusMs / 60000);
   const restMinutes = option.restMinutes ?? Math.round(restMs / 60000);
 
   removeReminderGroup('pomodoro');
-  reminderTimer.currentOption = { ...option, focusMs, restMs, movementDelayMs, focusMinutes, restMinutes };
+  reminderTimer.currentOption = { ...option, focusMs, restMs, focusMinutes, restMinutes };
   reminderTimer.pomodoroState = 'running';
   const startedAt = Date.now();
   reminderTimer.pomodoroEndAt = startedAt + focusMs;
@@ -1682,6 +2197,8 @@ function startReminderTimer(option) {
   reminderTimer.phaseDuration = focusMs;
   reminderTimer.pausedAt = 0;
   reminderTimer.activeButton = option.button || null;
+  setDialogView('timer');
+  updateTimerPhaseLabel();
   reminderTimer.queue.push(
     {
       group: 'pomodoro',
@@ -1793,6 +2310,7 @@ function animateBirdPosition(target, options = {}) {
 function openTimerDialog() {
   if (!pet.ready || pet.state === 'hatching') return;
 
+  hideWeatherBubble();
   clearInactivityTimer();
   clearPetTimers();
   stopMotionLoops();
@@ -1805,6 +2323,9 @@ function openTimerDialog() {
   reminderTimer.dialogOpen = true;
   customReminderError.textContent = '';
   timerDialog.hidden = false;
+  if (!['running', 'paused'].includes(reminderTimer.pomodoroState)) {
+    setDialogView('chat');
+  }
   restoreDefaultBirdImage();
   pet.face = -1;
   updateFacingStyles();
@@ -2130,6 +2651,8 @@ function closeTimerDialog(options = {}) {
   clearPerchIdleMotion();
   reminderTimer.dialogOpen = false;
   reminderTimer.dialogDrag = null;
+  reminderTimer.birdDialogDrag = null;
+  reminderTimer.suppressBirdClick = false;
   reminderTimer.dialogPosition = null;
   timerDialog.classList.remove('dragging');
   timerDialog.hidden = true;
@@ -2175,7 +2698,7 @@ function showWeather(current, locationLabel) {
   weatherBubbleIcon.textContent = visual.icon;
   weatherBubbleTemperature.textContent = temperature === null ? '--°' : `${temperature}°`;
   weatherBubble.title = weather.description;
-  weatherBubbleHit.setAttribute('aria-label', `${weather.description}，点击关闭`);
+  weatherBubbleHit.setAttribute('aria-label', `${weather.description}，点击关闭，右键重新定位天气`);
 
   if (weather.pendingBubble) {
     weather.pendingBubble = false;
@@ -2190,7 +2713,7 @@ function showWeatherUnavailable() {
   weatherBubbleIcon.textContent = '';
   weatherBubbleTemperature.textContent = '';
   weatherBubble.title = '暂时无法获取当前天气';
-  weatherBubbleHit.setAttribute('aria-label', '暂时无法获取当前天气');
+  weatherBubbleHit.setAttribute('aria-label', '暂时无法获取当前天气，右键重新定位天气');
 }
 
 function clearWeatherBubbleTimers() {
@@ -2198,6 +2721,13 @@ function clearWeatherBubbleTimers() {
   if (weather.burstTimer) clearTimeout(weather.burstTimer);
   weather.bubbleTimer = null;
   weather.burstTimer = null;
+}
+
+function hideWeatherBubble() {
+  clearWeatherBubbleTimers();
+  weather.pendingBubble = false;
+  weatherBubble.className = 'weather-bubble';
+  weatherBubbleHit.className = 'weather-bubble-hit';
 }
 
 function burstWeatherBubble() {
@@ -2219,7 +2749,7 @@ function spitWeatherBubble() {
   if (!pet.ready || blocksLiveInteraction()) return;
 
   if (!weather.loaded || !weather.visual ||
-      Date.now() - weather.fetchedAt > 10 * 60 * 1000) {
+      Date.now() - weather.fetchedAt > weatherRefreshMs) {
     weather.pendingBubble = true;
     loadTodayWeather();
     return;
@@ -2234,7 +2764,7 @@ function spitWeatherBubble() {
     ? '--°'
     : `${weather.temperature}°`;
   weatherBubble.title = weather.description;
-  weatherBubbleHit.setAttribute('aria-label', `${weather.description}，点击关闭`);
+  weatherBubbleHit.setAttribute('aria-label', `${weather.description}，点击关闭，右键重新定位天气`);
 
   requestAnimationFrame(() => {
     weatherBubble.classList.add('visible', 'spitting');
@@ -2245,12 +2775,12 @@ function spitWeatherBubble() {
       weather.bubbleTimer = setTimeout(() => {
         weather.bubbleTimer = null;
         burstWeatherBubble();
-      }, 10000);
+      }, 5000);
     }, 780);
   });
 }
 
-function requestBrowserLocation() {
+function requestBrowserLocation(options = {}) {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error('Geolocation is unavailable'));
@@ -2267,7 +2797,7 @@ function requestBrowserLocation() {
       {
         enableHighAccuracy: true,
         timeout: 7000,
-        maximumAge: 5 * 60 * 1000
+        maximumAge: options.forceLocation ? 0 : weatherLocationMaxAgeMs
       }
     );
   });
@@ -2298,9 +2828,11 @@ async function fetchTodayWeather(location) {
   };
 }
 
-async function loadTodayWeather() {
+async function loadTodayWeather(options = {}) {
   if (weather.loading) return;
-  if (weather.loaded && Date.now() - weather.fetchedAt <= 10 * 60 * 1000) return;
+  if (!options.forceRefresh &&
+      weather.loaded &&
+      Date.now() - weather.fetchedAt <= weatherRefreshMs) return;
 
   weather.loaded = false;
   weather.loading = true;
@@ -2308,7 +2840,7 @@ async function loadTodayWeather() {
 
   let location;
   try {
-    location = await requestBrowserLocation();
+    location = await requestBrowserLocation(options);
   } catch {
     location = fallbackWeatherLocation;
   }
@@ -2334,6 +2866,25 @@ async function loadTodayWeather() {
   } finally {
     weather.loading = false;
   }
+}
+
+function refreshWeatherLocationFromBubble(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  hideMangoContextMenu();
+
+  if (!weatherBubble.classList.contains('visible') &&
+      !weatherBubbleHit.classList.contains('active')) return;
+
+  beginPetInteraction();
+  clearWeatherBubbleTimers();
+  weather.pendingBubble = true;
+  weather.loaded = false;
+  weather.fetchedAt = 0;
+  weatherBubble.className = 'weather-bubble';
+  weatherBubbleHit.className = 'weather-bubble-hit';
+  loadTodayWeather({ forceRefresh: true, forceLocation: true });
+  scheduleHeadBlink();
 }
 
 function blocksLiveInteraction(state = pet.state) {
@@ -2838,6 +3389,7 @@ function handlePointerMove(event) {
 }
 
 function handleStageClick(event) {
+  hideMangoContextMenu();
   if (!pet.ready) return;
   if (event.target === resetBtn) return;
   if (blocksLiveInteraction()) return;
@@ -2854,7 +3406,55 @@ function handleStageClick(event) {
   }
 }
 
+function getNextDailyMangoResetDelay(now = new Date()) {
+  const next = new Date(now);
+  next.setHours(dailyMangoReset.hour, 0, 0, 0);
+  if (next <= now) {
+    next.setDate(next.getDate() + 1);
+  }
+  return next.getTime() - now.getTime();
+}
+
+function scheduleDailyMangoReset() {
+  if (dailyMangoReset.timer) clearTimeout(dailyMangoReset.timer);
+  dailyMangoReset.timer = setTimeout(() => {
+    dailyMangoReset.timer = null;
+    resetAll();
+    scheduleDailyMangoReset();
+  }, getNextDailyMangoResetDelay());
+}
+
+function hideMangoContextMenu() {
+  mangoContextMenu.classList.remove('visible');
+  mangoContextMenu.hidden = true;
+}
+
+function showMangoContextMenu(event) {
+  if (mangoClosed) return;
+  event.preventDefault();
+  event.stopPropagation();
+  mangoContextMenu.hidden = false;
+  requestAnimationFrame(() => mangoContextMenu.classList.add('visible'));
+}
+
+function closeMangoPet() {
+  mangoClosed = true;
+  hideMangoContextMenu();
+  stage.classList.add('closed');
+  clearInactivityTimer();
+  clearPetTimers();
+  stopMotionLoops();
+  clearWeatherBubbleTimers();
+  clearReminderTimer();
+  closeTimerDialog({ resetInactivity: false });
+  cancelBirdPositionAnimation();
+  document.title = defaultDocumentTitle;
+}
+
 function resetAll() {
+  mangoClosed = false;
+  stage.classList.remove('closed');
+  hideMangoContextMenu();
   clearInactivityTimer();
   clearPetTimers();
   stopMotionLoops();
@@ -2865,6 +3465,7 @@ function resetAll() {
   document.title = defaultDocumentTitle;
   customReminderForm.reset();
   customReminderError.textContent = '';
+  clearChat();
   reminderMemos.splice(0);
   renderReminderMemos();
   if (pet.singleClickTimer) clearTimeout(pet.singleClickTimer);
@@ -2890,7 +3491,7 @@ function resetAll() {
   birdWrap.style.opacity = '0';
   renderBird({ scale: 0.3, opacity: '0' });
   setPetState('hidden');
-  birdWrap.classList.remove('ready', 'activity-jump');
+  birdWrap.classList.remove('ready');
 
   shadow.style.opacity = '0';
   shadow.style.width = '120px';
@@ -2906,20 +3507,85 @@ function resetAll() {
 }
 
 mangoWrap.addEventListener('click', event => {
+  hideMangoContextMenu();
   event.stopPropagation();
   loadTodayWeather();
   hatchFromMango();
 });
 
 weatherBubbleHit.addEventListener('click', event => {
+  hideMangoContextMenu();
   event.stopPropagation();
   beginPetInteraction();
   burstWeatherBubble();
   scheduleHeadBlink();
 });
+weatherBubbleHit.addEventListener('contextmenu', refreshWeatherLocationFromBubble);
+
+birdWrap.addEventListener('pointerdown', event => {
+  if (event.button !== 0 ||
+      !reminderTimer.dialogOpen ||
+      pet.state !== 'dialogPerch') return;
+  const rect = timerDialog.getBoundingClientRect();
+  reminderTimer.suppressBirdClick = false;
+  reminderTimer.birdDialogDrag = {
+    pointerId: event.pointerId,
+    offsetX: event.clientX - rect.left,
+    offsetY: event.clientY - rect.top,
+    startX: event.clientX,
+    startY: event.clientY,
+    moved: false
+  };
+  timerDialog.classList.add('dragging');
+  birdWrap.setPointerCapture(event.pointerId);
+  event.preventDefault();
+  event.stopPropagation();
+});
+
+birdWrap.addEventListener('pointermove', event => {
+  const drag = reminderTimer.birdDialogDrag;
+  if (drag?.pointerId !== event.pointerId) return;
+  if (!drag.moved &&
+      Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) >= 4) {
+    drag.moved = true;
+  }
+  if (!drag.moved) return;
+  reminderTimer.dialogDrag = drag;
+  updateDraggedTimerDialog(event.clientX, event.clientY);
+  reminderTimer.dialogDrag = null;
+  event.preventDefault();
+  event.stopPropagation();
+});
+
+birdWrap.addEventListener('pointerup', event => {
+  const drag = reminderTimer.birdDialogDrag;
+  if (drag?.pointerId !== event.pointerId) return;
+  reminderTimer.suppressBirdClick = drag.moved;
+  reminderTimer.birdDialogDrag = null;
+  timerDialog.classList.remove('dragging');
+  if (birdWrap.hasPointerCapture(event.pointerId)) {
+    birdWrap.releasePointerCapture(event.pointerId);
+  }
+  setTimeout(() => {
+    reminderTimer.suppressBirdClick = false;
+  }, 0);
+  event.stopPropagation();
+});
+
+birdWrap.addEventListener('pointercancel', event => {
+  if (reminderTimer.birdDialogDrag?.pointerId !== event.pointerId) return;
+  reminderTimer.birdDialogDrag = null;
+  reminderTimer.suppressBirdClick = false;
+  timerDialog.classList.remove('dragging');
+});
 
 birdWrap.addEventListener('click', event => {
+  hideMangoContextMenu();
   event.stopPropagation();
+  if (reminderTimer.suppressBirdClick) {
+    reminderTimer.suppressBirdClick = false;
+    return;
+  }
   if (weatherBubbleHit.contains(event.target)) return;
   if (reminderTimer.dialogOpen && pet.state === 'dialogPerch') {
     if (['running', 'paused'].includes(reminderTimer.pomodoroState)) {
@@ -2942,8 +3608,7 @@ birdWrap.addEventListener('click', event => {
       wakeFromSleep();
     } else if (pet.ready && !blocksLiveInteraction()) {
       beginPetInteraction();
-      spitWeatherBubble();
-      scheduleHeadBlink();
+      openTimerDialog();
     }
   }, config.singleClickDelay);
 });
@@ -2954,14 +3619,22 @@ birdWrap.addEventListener('dblclick', event => {
   if (pet.singleClickTimer) clearTimeout(pet.singleClickTimer);
   pet.singleClickTimer = null;
   if (!pet.ready || pet.state === 'hatching') return;
-  if (pet.state === 'sleeping') wakeFromSleep();
+  if (pet.state === 'sleeping') {
+    wakeFromSleep();
+    return;
+  }
+  if (blocksLiveInteraction()) return;
   beginPetInteraction();
-  openTimerDialog();
+  spitWeatherBubble();
+  scheduleHeadBlink();
 });
 
 stage.addEventListener('pointermove', handlePointerMove);
 stage.addEventListener('click', handleStageClick);
 timerDialog.addEventListener('click', event => event.stopPropagation());
+stage.addEventListener('contextmenu', showMangoContextMenu);
+document.addEventListener('click', hideMangoContextMenu);
+window.addEventListener('blur', hideMangoContextMenu);
 timerDialog.addEventListener('pointerdown', event => {
   if (event.button !== 0) return;
   if (event.target.closest('button, input, textarea, label, a')) return;
@@ -2969,7 +3642,10 @@ timerDialog.addEventListener('pointerdown', event => {
   reminderTimer.dialogDrag = {
     pointerId: event.pointerId,
     offsetX: event.clientX - rect.left,
-    offsetY: event.clientY - rect.top
+    offsetY: event.clientY - rect.top,
+    startX: event.clientX,
+    startY: event.clientY,
+    moved: false
   };
   timerDialog.classList.add('dragging');
   timerDialog.setPointerCapture(event.pointerId);
@@ -2977,12 +3653,20 @@ timerDialog.addEventListener('pointerdown', event => {
   event.stopPropagation();
 });
 timerDialog.addEventListener('pointermove', event => {
-  if (reminderTimer.dialogDrag?.pointerId !== event.pointerId) return;
+  const drag = reminderTimer.dialogDrag;
+  if (drag?.pointerId !== event.pointerId) return;
+  if (!drag.moved &&
+      Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) >= 4) {
+    drag.moved = true;
+  }
+  if (!drag.moved) return;
   updateDraggedTimerDialog(event.clientX, event.clientY);
+  event.preventDefault();
   event.stopPropagation();
 });
 timerDialog.addEventListener('pointerup', event => {
-  if (reminderTimer.dialogDrag?.pointerId !== event.pointerId) return;
+  const drag = reminderTimer.dialogDrag;
+  if (drag?.pointerId !== event.pointerId) return;
   reminderTimer.dialogDrag = null;
   timerDialog.classList.remove('dragging');
   if (timerDialog.hasPointerCapture(event.pointerId)) {
@@ -2995,10 +3679,38 @@ timerDialog.addEventListener('pointercancel', event => {
   reminderTimer.dialogDrag = null;
   timerDialog.classList.remove('dragging');
 });
+[chatTab, timerTab].forEach(tab => {
+  tab.addEventListener('click', event => {
+    event.stopPropagation();
+    if (timerDialog.classList.contains('timer-running')) return;
+    setDialogView(tab.dataset.dialogView);
+  });
+});
+chatForm.addEventListener('submit', event => {
+  event.preventDefault();
+  const question = chatInput.value.trim();
+  if (!question || chat.pending) return;
+  chatInput.value = '';
+  askBird(question);
+});
+chatInput.addEventListener('keydown', event => {
+  if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+  event.preventDefault();
+  chatForm.requestSubmit();
+});
+chatClear.addEventListener('click', event => {
+  event.stopPropagation();
+  clearChat();
+  chatInput.focus();
+});
 timerOptionButtons.forEach(button => {
   button.addEventListener('click', () => {
     if (button === reminderTimer.activeButton) {
-      if (reminderTimer.pomodoroState === 'running') pausePomodoroTimer();
+      if (reminderTimer.pomodoroState === 'running') {
+        pausePomodoroTimer();
+      } else if (reminderTimer.pomodoroState === 'paused') {
+        resumePomodoroTimer();
+      }
       return;
     }
     if (['running', 'paused'].includes(reminderTimer.pomodoroState)) return;
@@ -3063,6 +3775,10 @@ resetBtn.addEventListener('click', event => {
   event.stopPropagation();
   resetAll();
 });
+closeMango.addEventListener('click', event => {
+  event.stopPropagation();
+  closeMangoPet();
+});
 
 window.addEventListener('resize', () => {
   pet.x = clamp(pet.x, config.screenPadding, window.innerWidth - config.screenPadding);
@@ -3096,9 +3812,12 @@ window.startReminderTimer = startReminderTimer;
 window.finishReminderTimer = finishReminderTimer;
 window.parseNaturalReminder = parseNaturalReminder;
 window.makeCuteReminderText = makeCuteReminderText;
+window.scheduleDailyMangoReset = scheduleDailyMangoReset;
+window.closeMangoPet = closeMangoPet;
 
 Object.keys(frameSets).forEach(preloadFrameSet);
 resetAll();
+scheduleDailyMangoReset();
 </script>
 
 </body>
