@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mango Bird Desktop"
+  short_description: "Install and configure the Mango Bird macOS desktop pet."
+  default_prompt: "Install Mango Bird as a macOS desktop pet and help me configure my own DeepSeek API key."
