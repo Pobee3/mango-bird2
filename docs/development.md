@@ -29,7 +29,7 @@ mango-bird.app/Contents/Resources/MangoBird/new2/
 
 ## Source Build
 
-Source builds are developer-only. They require macOS plus Xcode or the macOS Command Line Tools:
+Source builds are developer-only. This public repository is enough to study the app structure and installer flow, but a full local source build also needs the runtime artwork from a complete source checkout or from the release app bundle. Source builds require macOS plus Xcode or the macOS Command Line Tools:
 
 ```text
 xcode-select --install

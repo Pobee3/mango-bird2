@@ -21,10 +21,19 @@ REQUIRED_PROJECT_FILES = (
     "mango-bird-server.py",
     "macos/build-mango-bird-app.sh",
 )
+REQUIRED_RUNTIME_ASSETS = (
+    "assets/芒果_nobg.png",
+    "assets/终图_绿翅.png",
+    "new2/左边走.png",
+)
 
 
 def is_project_root(path: Path) -> bool:
     return all((path / file_name).exists() for file_name in REQUIRED_PROJECT_FILES)
+
+
+def has_runtime_assets(path: Path) -> bool:
+    return all((path / file_name).exists() for file_name in REQUIRED_RUNTIME_ASSETS)
 
 
 def find_project_root(start: Path) -> Optional[Path]:
@@ -211,7 +220,11 @@ def main() -> int:
     config_dir = Path(args.config_dir).expanduser()
 
     bundled_root = find_project_root(Path(__file__))
-    should_build = args.build_from_source or args.source_dir or (bundled_root and not args.skip_build)
+    should_build = (
+        args.build_from_source
+        or args.source_dir
+        or (bundled_root and not args.skip_build and has_runtime_assets(bundled_root))
+    )
     if should_build:
         root = project_root(args)
         build_script = root / "macos" / "build-mango-bird-app.sh"
