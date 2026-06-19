@@ -48,14 +48,7 @@ open "$HOME/Applications/mango-bird.app"
 
 这里的 `$HOME` 表示当前用户的个人目录，例如 `/Users/your-name`。`open` 的作用是让 macOS 打开这个 app。
 
-如果 macOS 拦截未签名 app，并且你信任这个 GitHub 仓库和 release，再执行：
-
-```bash
-xattr -dr com.apple.quarantine "$HOME/Applications/mango-bird.app"
-open "$HOME/Applications/mango-bird.app"
-```
-
-`xattr -dr com.apple.quarantine ...` 的作用是删除 app 上的下载隔离标记。它不会给 app 额外的系统权限，也不会自动授予文件、麦克风、摄像头等权限；这些权限仍由 macOS 单独弹窗确认。它的风险在于会绕过 macOS 对“从网络下载的未签名 app”的首次安全提醒，所以只应在你确认来源可信时使用，不要把这条命令随便用于不认识的 app。
+如果 macOS 拦截未签名 app，可以在 Finder 里打开 `~/Applications`，右键 `mango-bird.app`，选择“打开”，再在弹窗里确认“打开”。这会保留 macOS 的正常安全确认流程。
 
 ## macOS 桌宠应用
 
@@ -63,7 +56,7 @@ open "$HOME/Applications/mango-bird.app"
 
 当前 app 已改为 Swift 原生本地代理。直接下载 app 的用户不需要额外安装 Python runtime，也不需要 Xcode 或 Command Line Tools 才能运行。
 
-当前 release app 未签名、未公证。面向正式发布时，建议使用 Apple Developer ID 签名并 notarize，这样普通用户就不需要手动处理 Gatekeeper 或 quarantine。
+当前 release app 未签名、未公证。面向正式发布时，建议使用 Apple Developer ID 签名并 notarize，这样普通用户就不需要处理 Gatekeeper 提示。
 
 ## API Key
 
