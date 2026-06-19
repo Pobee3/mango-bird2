@@ -81,9 +81,16 @@ def extract_app_from_zip(zip_path: Path, destination: Path) -> Path:
     destination.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(zip_path) as archive:
         archive.extractall(destination)
-    apps = sorted(destination.rglob("*.app"))
+    apps = sorted(
+        candidate
+        for candidate in destination.rglob("*.app")
+        if "__MACOSX" not in candidate.parts
+        and not candidate.name.startswith("._")
+        and (candidate / "Contents" / "Info.plist").exists()
+        and any((candidate / "Contents" / "MacOS").glob("*"))
+    )
     if not apps:
-        raise SystemExit(f"No .app bundle found in downloaded ZIP: {zip_path}")
+        raise SystemExit(f"No valid .app bundle found in downloaded ZIP: {zip_path}")
     return apps[0]
 
 
