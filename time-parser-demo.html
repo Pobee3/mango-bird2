@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>中文时间解析验证</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      color: #26443f;
+      background: #fdf6ee;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    }
+    main {
+      width: min(680px, 100%);
+      padding: 32px;
+      border: 1px solid rgba(83, 132, 122, .24);
+      border-radius: 24px;
+      background: rgba(235, 250, 246, .82);
+      box-shadow: 0 20px 60px rgba(80, 104, 95, .14);
+    }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    .hint { margin: 0 0 24px; color: #68817c; }
+    form { display: flex; gap: 10px; }
+    input {
+      flex: 1;
+      min-width: 0;
+      padding: 14px 16px;
+      border: 1px solid #a9c7c0;
+      border-radius: 14px;
+      outline: none;
+      background: white;
+      font-size: 16px;
+    }
+    input:focus { border-color: #4d9988; box-shadow: 0 0 0 3px #4d998822; }
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 0 20px;
+      color: white;
+      background: #4d9988;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
+    .examples button {
+      padding: 8px 12px;
+      color: #466d65;
+      background: #dfeeea;
+      font-size: 13px;
+    }
+    pre {
+      min-height: 150px;
+      margin: 0;
+      padding: 18px;
+      overflow: auto;
+      border-radius: 16px;
+      color: #d9f3ed;
+      background: #24433d;
+      font: 14px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>中文时间解析验证</h1>
+    <p class="hint">输入提醒文字，验证事件名称和绝对触发时间。</p>
+    <form id="form">
+      <input id="text" value="下周三下午三点半开组会" autocomplete="off">
+      <button type="submit">解析</button>
+    </form>
+    <div class="examples" id="examples"></div>
+    <pre id="result">等待解析...</pre>
+  </main>
+  <script>
+    const samples = [
+      "下周三下午三点半开组会",
+      "5分钟后提醒我喝水",
+      "本月18号上午10点交报告",
+      "今天晚上8点健身"
+    ];
+    const input = document.querySelector("#text");
+    const result = document.querySelector("#result");
+
+    async function parseText(text) {
+      result.textContent = "解析中...";
+      try {
+        const response = await fetch("/api/parse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text })
+        });
+        const data = await response.json();
+        result.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        result.textContent = `请求失败：${error.message}`;
+      }
+    }
+
+    document.querySelector("#form").addEventListener("submit", event => {
+      event.preventDefault();
+      parseText(input.value);
+    });
+
+    const examples = document.querySelector("#examples");
+    samples.forEach(sample => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = sample;
+      button.addEventListener("click", () => {
+        input.value = sample;
+        parseText(sample);
+      });
+      examples.appendChild(button);
+    });
+
+    parseText(input.value);
+  </script>
+</body>
+</html>
