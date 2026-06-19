@@ -79,8 +79,12 @@ def extract_app_from_zip(zip_path: Path, destination: Path) -> Path:
     if destination.exists():
         shutil.rmtree(destination)
     destination.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(zip_path) as archive:
-        archive.extractall(destination)
+    ditto = Path("/usr/bin/ditto")
+    if platform.system() == "Darwin" and ditto.exists():
+        subprocess.run([str(ditto), "-x", "-k", str(zip_path), str(destination)], check=True)
+    else:
+        with zipfile.ZipFile(zip_path) as archive:
+            archive.extractall(destination)
     apps = sorted(
         candidate
         for candidate in destination.rglob("*.app")
