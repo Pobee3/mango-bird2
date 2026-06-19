@@ -8,14 +8,21 @@ The desktop app is macOS-only. It uses a native Swift/WebKit shell and a Swift l
 
 Mango Bird lives directly on the macOS desktop instead of inside a browser tab. It starts as a mango, then hatches into a small bird when clicked.
 
-Main interactions:
+Interaction logic:
 
-- Click the mango to hatch the bird.
+- The pet starts as a mango. Click the mango to make it shake, burst into small particles, and hatch the bird.
+- After hatching, the bird idles on the desktop and turns toward the pointer.
 - Drag the bird to move it around the desktop.
-- Hover over the bird's head to trigger a nuzzle animation.
-- Click the bird to open a translucent tool panel.
-- Double-click the bird to show local weather.
-- Right-click the bird to show the return menu, then send it back to the mango.
+- Hover over the bird's head for a short moment to trigger the nuzzle animation.
+- Click the bird once to open the translucent tool panel.
+- When the tool panel is open, the bird perches on the panel edge. Click the bird again to close the panel.
+- Double-click the bird to show a weather bubble.
+- Click the weather bubble to pop it. Right-click the weather bubble to refresh location and reload weather.
+- Right-click the bird body to show the return menu, then send it back to the mango.
+- If the bird receives no interaction for about 4 seconds, it tilts/blinks as an idle reaction.
+- If it receives no interaction for about 8 more seconds after that, it falls asleep.
+- Click or double-click the sleeping bird to wake it up with a ruffle animation.
+- Each day at local 6:00 AM, if the app is still running, the pet resets back to the mango state.
 
 Tool panel features:
 

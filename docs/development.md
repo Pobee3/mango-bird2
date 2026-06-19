@@ -13,10 +13,24 @@ This public distribution is optimized for installing the Codex skill and the pre
 ## Feature Map
 
 - Desktop window behavior, click-through areas, dragging, and app lifecycle live in `macos/MangoBirdApp.swift`.
-- The hatch, idle, sleep, nuzzle, walking, and return-to-mango interactions live in `mango-bird.html`.
+- The hatch, idle, head-blink, sleep, wake, nuzzle, walking, and return-to-mango interactions live in `mango-bird.html`.
 - The translucent tool panel, chat view, weather bubble, timer UI, reminder cards, and todo UI also live in `mango-bird.html`.
 - The Swift local API server handles `/api/health`, `/api/config`, and `/api/chat` inside `macos/MangoBirdApp.swift`.
 - Natural-language reminder parsing is implemented in `time_parser.py` and covered by `tests/test_time_parser.py`.
+
+## Interaction State Machine
+
+- `hidden`: the bird is hidden and the mango is visible. Clicking the mango starts hatching.
+- `hatching`: the mango shakes, bursts into particles, and the bird scales into view.
+- `idle`: the bird is ready, faces the pointer, and accepts live interactions.
+- `nuzzle`: pointer hover over the head zone starts a short nuzzle animation, then returns to `idle`.
+- `headBlink`: after about 4 seconds without interaction, the bird tilts/blinks, then returns to `idle`.
+- `sleeping`: after another idle delay of about 8 seconds, the bird sleeps.
+- `waking`: clicking or double-clicking a sleeping bird plays the ruffle animation, then returns to `idle`.
+- `dialogPerch`: when the tool panel is open, the bird perches on the panel edge and panel controls take priority.
+- `pomodoro`: when a timer is active, the UI collapses into the timer badge and timer interactions take priority.
+
+Important timing values are configured in `mango-bird.html`: `headBlinkIdleDelay` is `4000`, `sleepIdleDelay` is `8000`, `nuzzleDwell` is `500`, and frame durations are stored near the same config block.
 
 ## Runtime Assets
 
