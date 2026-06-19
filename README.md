@@ -41,6 +41,8 @@ open "$HOME/Applications/mango-bird.app"
 Claude Code部分：
 你根据指示一步步选yes即可
 
+⚠️：如果安装好后你关闭了桌宠，第二天想打开它找不到，你可以点开访达搜索mango-bird，或者在点开左侧菜单栏，那里有个三角支架型的“应用程序”，点进去后找到app，里面还会展开被收缩在一块的其他app，里面就有这个桌宠。
+
 ## macOS 桌宠应用
 
 本项目包含原生 macOS 轻量封装，不需要 Electron。当前桌面版只支持 macOS；Windows、Linux 或其他非 macOS 电脑可以下载仓库阅读 skill 和开发说明，但不能直接运行这个桌面 app。
