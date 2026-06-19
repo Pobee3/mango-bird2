@@ -38,7 +38,7 @@ open "$HOME/Applications/mango-bird.app"
 
 如果 macOS 拦截未签名 app，可以在 Finder 里打开 `~/Applications`，右键 `mango-bird.app`，选择“打开”，再在弹窗里确认“打开”。这会保留 macOS 的正常安全确认流程。
 
-Claude Code
+Claude Code部分：
 你根据指示一步步选yes即可
 
 ## macOS 桌宠应用
