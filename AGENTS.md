@@ -7,15 +7,15 @@
 
 Mango Bird 是一个 macOS 桌面版 mango-bird 桌宠。用户点击芒果后，小鸟会从芒果中孵化出来，并通过逐帧 PNG、CSS 动画和 JavaScript 状态控制完成摸头蹭蹭、天气气泡、临时 AI 问答、待办事项提醒、待机眨眼、睡觉和唤醒等互动。
 
-当前产品入口只保留 macOS 桌面版。核心 HTML、CSS 和 JavaScript 仍位于 `mango-bird.html`，但普通网页打开时只显示桌面版提示，不再提供网页版互动。Windows、Linux 或其他非 macOS 电脑可以下载源码和 skill 阅读安装说明，但不能直接运行这个桌面 app。AI 问答通过 `mango-bird-server.py` 提供本地静态服务和 DeepSeek/GLM 代理。
+当前产品入口只保留 macOS 桌面版。核心 HTML、CSS 和 JavaScript 仍位于 `mango-bird.html`，但普通网页打开时只显示桌面版提示，不再提供网页版互动。Windows、Linux 或其他非 macOS 电脑可以下载源码和 skill 阅读安装说明，但不能直接运行这个桌面 app。桌面 app 的本地静态服务、配置保存和 DeepSeek/GLM 代理由 Swift 壳内置实现；`mango-bird-server.py` 仅保留作开发对照和排查工具。
 
-macOS 桌面版位于 `macos/`，使用原生 Swift `WKWebView` 透明置顶窗口加载 `mango-bird.html?desktop=1`，并启动内置 Python 服务。随仓库发布的 `skills/mango-bird-desktop/` 可供 Codex 或 Claude Code 从 GitHub checkout 中安装、构建和配置用户自己的模型服务 API Key。
+macOS 桌面版位于 `macos/`，使用原生 Swift `WKWebView` 透明置顶窗口加载 `mango-bird.html?desktop=1`，并启动 Swift 原生本地 HTTP/API 服务。随仓库发布的 `skills/mango-bird-desktop/` 可供 Codex 或 Claude Code 从 GitHub checkout 中安装、构建和配置用户自己的模型服务 API Key。
 桌面模式会使用略小的小鸟和芒果尺寸，隐藏开场提示但保留小鸟阴影；单击小鸟打开问答/计时工具框，双击小鸟显示天气，右键鸟身显示回巢，右键天气泡泡刷新当地天气，额外支持按住小鸟拖动位置。透明区域保持点击穿透。桌面尺寸下摸头热区、天气泡泡、天气点击热区、提醒弹框和提醒文字按实际渲染宽度缩放。
 
 ## 2. 当前入口
 
 - 主页面：`mango-bird.html`（仅供桌面壳以 `?desktop=1` 加载）
-- AI 本地服务：`mango-bird-server.py`
+- 开发对照服务：`mango-bird-server.py`
 - macOS 桌宠构建脚本：`macos/build-mango-bird-app.sh`
 - macOS 桌宠 Swift 壳：`macos/MangoBirdApp.swift`
 - 安装配置 skill：`skills/mango-bird-desktop/SKILL.md`

@@ -3,14 +3,77 @@ from __future__ import annotations
 
 import argparse
 import os
+import platform
 import shutil
 import stat
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 
-def project_root() -> Path:
-    return Path(__file__).resolve().parents[3]
+DEFAULT_REPO_URL = "https://github.com/Pobee3/mango-bird.git"
+REQUIRED_PROJECT_FILES = (
+    "mango-bird.html",
+    "mango-bird-server.py",
+    "macos/build-mango-bird-app.sh",
+)
+
+
+def is_project_root(path: Path) -> bool:
+    return all((path / file_name).exists() for file_name in REQUIRED_PROJECT_FILES)
+
+
+def find_project_root(start: Path) -> Optional[Path]:
+    current = start.resolve()
+    for candidate in (current, *current.parents):
+        if is_project_root(candidate):
+            return candidate
+    return None
+
+
+def default_checkout_dir() -> Path:
+    return Path.home() / "Library" / "Application Support" / "Mango Bird" / "source"
+
+
+def clone_project(repo_url: str, checkout_dir: Path) -> Path:
+    if checkout_dir.exists():
+        if is_project_root(checkout_dir):
+            return checkout_dir
+        if any(checkout_dir.iterdir()):
+            raise SystemExit(
+                f"Checkout directory exists but is not a Mango Bird project: {checkout_dir}"
+            )
+    checkout_dir.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "clone", repo_url, str(checkout_dir)], check=True)
+    if not is_project_root(checkout_dir):
+        raise SystemExit(f"Downloaded repository is missing Mango Bird files: {checkout_dir}")
+    return checkout_dir
+
+
+def update_project(root: Path) -> None:
+    if (root / ".git").exists():
+        subprocess.run(["git", "-C", str(root), "pull", "--ff-only"], check=True)
+
+
+def project_root(args: argparse.Namespace) -> Path:
+    if args.source_dir:
+        root = Path(args.source_dir).expanduser()
+        if not is_project_root(root):
+            raise SystemExit(f"Not a Mango Bird project root: {root}")
+        return root
+
+    bundled_root = find_project_root(Path(__file__))
+    if bundled_root:
+        if args.update_source:
+            update_project(bundled_root)
+        return bundled_root
+
+    repo_url = args.repo_url or os.environ.get("MANGO_BIRD_REPO_URL") or DEFAULT_REPO_URL
+    checkout_dir = Path(args.checkout_dir).expanduser()
+    root = clone_project(repo_url, checkout_dir)
+    if args.update_source:
+        update_project(root)
+    return root
 
 
 def copy_app(source: Path, destination: Path) -> None:
@@ -28,7 +91,7 @@ def write_env_template(config_dir: Path) -> None:
             "# Copy to .env and replace the placeholders with your own model service settings.\n"
             "# Supported providers: deepseek, glm.\n"
             "MANGO_AI_PROVIDER=deepseek\n"
-            "MANGO_AI_API_KEY=sk-your-own-api-key\n",
+            "MANGO_AI_API_KEY=your-api-key\n",
             encoding="utf-8",
         )
 
@@ -46,6 +109,26 @@ def write_env(config_dir: Path, provider: str, api_key: str) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build and install Mango Bird for macOS.")
+    parser.add_argument(
+        "--repo-url",
+        default="",
+        help=f"Git repository to clone when the skill is installed standalone. Defaults to {DEFAULT_REPO_URL}.",
+    )
+    parser.add_argument(
+        "--checkout-dir",
+        default=str(default_checkout_dir()),
+        help="Where to clone the project when the skill is installed standalone.",
+    )
+    parser.add_argument(
+        "--source-dir",
+        default="",
+        help="Existing Mango Bird project root to build from. Overrides --repo-url.",
+    )
+    parser.add_argument(
+        "--update-source",
+        action="store_true",
+        help="Run git pull --ff-only before building when the source is a git checkout.",
+    )
     parser.add_argument(
         "--install-dir",
         default=str(Path.home() / "Applications"),
@@ -79,7 +162,10 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    root = project_root()
+    if platform.system() != "Darwin":
+        raise SystemExit("Mango Bird desktop app is macOS-only.")
+
+    root = project_root(args)
     build_script = root / "macos" / "build-mango-bird-app.sh"
     app_source = root / "dist" / "mango-bird.app"
     app_destination = Path(args.install_dir).expanduser() / "mango-bird.app"

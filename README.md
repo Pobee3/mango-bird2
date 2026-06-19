@@ -5,35 +5,25 @@
 
 mango-bird macOS 桌宠：可摸头、查看天气、临时问 AI 问题和设置待办事项提醒。
 
-## 本地开发
-
-聊天服务可在项目目录中单独启动，用于排查桌面 app 内置服务：
-
-```bash
-cd mango-bird
-export MANGO_AI_PROVIDER="deepseek"   # deepseek / glm
-export MANGO_AI_API_KEY="你的 API Key"
-python3 mango-bird-server.py
-```
-
 普通网页版互动入口已取消。直接打开 `mango-bird.html` 时只会显示桌面版提示；桌面壳会加载 `mango-bird.html?desktop=1`。
 
 ## macOS 桌宠应用
 
-本项目包含原生 macOS 轻量封装，不需要 Electron。当前桌面版只支持 macOS；Windows、Linux 或其他非 macOS 电脑可以下载源码和 skill 阅读安装说明，但不能直接运行这个桌面 app。直接下载 app 的用户需要 macOS 自带或命令行工具提供的 `/usr/bin/python3`：
+本项目包含原生 macOS 轻量封装，不需要 Electron。当前桌面版只支持 macOS；Windows、Linux 或其他非 macOS 电脑可以下载源码和 skill 阅读安装说明，但不能直接运行这个桌面 app。
 
-```bash
-cd mango-bird
-bash macos/build-mango-bird-app.sh
-open "dist/mango-bird.app"
+如果还没有安装 skill，先把这个 GitHub skill 地址发给 Codex，请它安装：
+
+```text
+https://github.com/Pobee3/mango-bird/tree/main/skills/mango-bird-desktop
 ```
 
-也可以用随仓库发布的 skill 安装到 `~/Applications`：
+重启 Codex 后，运行桌宠只推荐这一种方式：直接对 Codex 说：
 
-```bash
-cd mango-bird
-python3 skills/mango-bird-desktop/scripts/install_mango_bird.py
+```text
+使用 $mango-bird-desktop 安装 Mango Bird macOS 桌宠
 ```
+
+Codex 会替你运行安装脚本、下载项目并构建 app。桌面 app 内置 Swift 本地代理，不需要用户额外安装 Python runtime。
 
 桌面应用会读取用户本机配置：
 
@@ -50,8 +40,6 @@ MANGO_AI_API_KEY=你的 API Key
 
 支持 `deepseek` 和 `glm`。如果不配置 Key，桌宠仍可运行，只有“问小鸟”聊天会提示缺少 Key。不要把 `.env` 或 API Key 提交到 GitHub。
 
-Codex 用户可以把 `skills/mango-bird-desktop/` 安装到 `~/.codex/skills/`，然后让 Codex 使用 `$mango-bird-desktop` 安装或排查。Claude Code 用户也可以直接读取同一份 `skills/mango-bird-desktop/SKILL.md` 执行安装流程。
-
 默认模型会随服务商选择：DeepSeek 使用 `deepseek-v4-flash`，GLM 使用 `glm-4-flash`。页面内不显示模型与模式切换按钮。
 
 如果服务商提示模型不可用，可在 `.env` 中手动覆盖：
@@ -61,6 +49,17 @@ MANGO_AI_MODEL=你的可用模型名
 ```
 
 API Key 应保持为单行文本，不要包含换行。
+
+## 本地开发
+
+仓库仍保留 Python 版聊天服务，供开发时单独启动和对照排查：
+
+```bash
+cd mango-bird
+export MANGO_AI_PROVIDER="deepseek"   # deepseek / glm
+export MANGO_AI_API_KEY="你的 API Key"
+python3 mango-bird-server.py
+```
 
 ## 分发说明
 
@@ -74,7 +73,7 @@ API Key 应保持为单行文本，不要包含换行。
 
 面向正式发布时，建议使用 Apple Developer ID 签名并 notarize。
 
-直接下载 app 的用户还需要系统可用的 `/usr/bin/python3`。如果对“下载即用”要求更高，后续应把 Python 运行时打包进 app，或把本地代理改成 Swift 原生实现。
+当前 app 已使用 Swift 原生本地代理，直接下载 app 的用户不需要额外安装 Python runtime。面向正式发布时，建议使用 Apple Developer ID 签名并 notarize。
 
 ## 互动
 
