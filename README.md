@@ -22,12 +22,6 @@ https://github.com/Pobee3/mango-bird2/tree/main/skills/mango-bird-desktop
 安装完成后，使用 $mango-bird-desktop 安装 Mango Bird macOS 桌宠。
 ```
 
-安装 skill 后重启 Codex，然后直接对 Codex 说：
-
-```text
-使用 $mango-bird-desktop 安装 Mango Bird macOS 桌宠
-```
-
 Codex 会运行 skill 安装器，下载 GitHub Release 里的 `mango-bird.zip`，并把 app 安装到（这里的～/Applications指的是当前用户目录下的应用位置，你通常下载的软件也会安装到这里）：
 
 ```text
