@@ -10,6 +10,14 @@ This public distribution is optimized for installing the Codex skill and the pre
 - `time_parser.py` and `tests/` contain the natural-language reminder parser and its tests.
 - `mango-bird-server.py` is the older Python development server, kept as a reference path for local debugging.
 
+## Feature Map
+
+- Desktop window behavior, click-through areas, dragging, and app lifecycle live in `macos/MangoBirdApp.swift`.
+- The hatch, idle, sleep, nuzzle, walking, and return-to-mango interactions live in `mango-bird.html`.
+- The translucent tool panel, chat view, weather bubble, timer UI, reminder cards, and todo UI also live in `mango-bird.html`.
+- The Swift local API server handles `/api/health`, `/api/config`, and `/api/chat` inside `macos/MangoBirdApp.swift`.
+- Natural-language reminder parsing is implemented in `time_parser.py` and covered by `tests/test_time_parser.py`.
+
 ## Runtime Assets
 
 The app needs image assets to look and behave like the packaged Mango Bird. For public installs, these assets are bundled inside the GitHub release ZIP:

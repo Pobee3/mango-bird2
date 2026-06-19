@@ -4,6 +4,29 @@ Mango Bird is a macOS desktop pet distributed through a Codex skill. The public 
 
 The desktop app is macOS-only. It uses a native Swift/WebKit shell and a Swift local API server, so the downloaded app does not require Electron, Xcode, or Python at runtime.
 
+## What It Does
+
+Mango Bird lives directly on the macOS desktop instead of inside a browser tab. It starts as a mango, then hatches into a small bird when clicked.
+
+Main interactions:
+
+- Click the mango to hatch the bird.
+- Drag the bird to move it around the desktop.
+- Hover over the bird's head to trigger a nuzzle animation.
+- Click the bird to open a translucent tool panel.
+- Double-click the bird to show local weather.
+- Right-click the bird to show the return menu, then send it back to the mango.
+
+Tool panel features:
+
+- Ask temporary AI questions in the chat panel.
+- Save a DeepSeek or GLM API key locally from the chat panel.
+- Use timer presets such as `25/5` and `50/10`.
+- Create natural-language reminders and todo items.
+- Show reminder cards near the bird when a reminder is due.
+
+The pet still runs without an API key. Only the AI chat feature needs a key.
+
 ## Install With Codex
 
 Ask Codex to install the skill from this GitHub path:
