@@ -7,11 +7,15 @@ import platform
 import shutil
 import stat
 import subprocess
+import tempfile
+import urllib.request
+import zipfile
 from pathlib import Path
 from typing import Optional
 
 
-DEFAULT_REPO_URL = "https://github.com/Pobee3/mango-bird.git"
+DEFAULT_REPO_URL = "https://github.com/Pobee3/mango-bird2.git"
+DEFAULT_APP_ZIP_URL = "https://github.com/Pobee3/mango-bird2/releases/latest/download/mango-bird.zip"
 REQUIRED_PROJECT_FILES = (
     "mango-bird.html",
     "mango-bird-server.py",
@@ -53,6 +57,34 @@ def clone_project(repo_url: str, checkout_dir: Path) -> Path:
 def update_project(root: Path) -> None:
     if (root / ".git").exists():
         subprocess.run(["git", "-C", str(root), "pull", "--ff-only"], check=True)
+
+
+def download_file(url: str, destination: Path) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with urllib.request.urlopen(url, timeout=120) as response:
+        with destination.open("wb") as output:
+            shutil.copyfileobj(response, output)
+
+
+def extract_app_from_zip(zip_path: Path, destination: Path) -> Path:
+    if destination.exists():
+        shutil.rmtree(destination)
+    destination.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(zip_path) as archive:
+        archive.extractall(destination)
+    apps = sorted(destination.rglob("*.app"))
+    if not apps:
+        raise SystemExit(f"No .app bundle found in downloaded ZIP: {zip_path}")
+    return apps[0]
+
+
+def download_app(app_zip_url: str) -> Path:
+    temp_dir = Path(tempfile.mkdtemp(prefix="mango-bird-install-"))
+    zip_path = temp_dir / "mango-bird.zip"
+    extract_dir = temp_dir / "app"
+    print(f"Downloading Mango Bird app from: {app_zip_url}")
+    download_file(app_zip_url, zip_path)
+    return extract_app_from_zip(zip_path, extract_dir)
 
 
 def project_root(args: argparse.Namespace) -> Path:
@@ -112,12 +144,17 @@ def main() -> int:
     parser.add_argument(
         "--repo-url",
         default="",
-        help=f"Git repository to clone when the skill is installed standalone. Defaults to {DEFAULT_REPO_URL}.",
+        help=f"Git repository to clone when --build-from-source is used. Defaults to {DEFAULT_REPO_URL}.",
+    )
+    parser.add_argument(
+        "--app-zip-url",
+        default=DEFAULT_APP_ZIP_URL,
+        help=f"Prebuilt app ZIP to download for normal installs. Defaults to {DEFAULT_APP_ZIP_URL}.",
     )
     parser.add_argument(
         "--checkout-dir",
         default=str(default_checkout_dir()),
-        help="Where to clone the project when the skill is installed standalone.",
+        help="Where to clone the project when --build-from-source is used.",
     )
     parser.add_argument(
         "--source-dir",
@@ -128,6 +165,11 @@ def main() -> int:
         "--update-source",
         action="store_true",
         help="Run git pull --ff-only before building when the source is a git checkout.",
+    )
+    parser.add_argument(
+        "--build-from-source",
+        action="store_true",
+        help="Build from a local or cloned source checkout instead of downloading the release app ZIP.",
     )
     parser.add_argument(
         "--install-dir",
@@ -165,14 +207,22 @@ def main() -> int:
     if platform.system() != "Darwin":
         raise SystemExit("Mango Bird desktop app is macOS-only.")
 
-    root = project_root(args)
-    build_script = root / "macos" / "build-mango-bird-app.sh"
-    app_source = root / "dist" / "mango-bird.app"
     app_destination = Path(args.install_dir).expanduser() / "mango-bird.app"
     config_dir = Path(args.config_dir).expanduser()
 
-    if not args.skip_build:
-        subprocess.run(["bash", str(build_script)], cwd=root, check=True)
+    bundled_root = find_project_root(Path(__file__))
+    should_build = args.build_from_source or args.source_dir or (bundled_root and not args.skip_build)
+    if should_build:
+        root = project_root(args)
+        build_script = root / "macos" / "build-mango-bird-app.sh"
+        app_source = root / "dist" / "mango-bird.app"
+        if not args.skip_build:
+            subprocess.run(["bash", str(build_script)], cwd=root, check=True)
+    elif args.skip_build:
+        root = project_root(args)
+        app_source = root / "dist" / "mango-bird.app"
+    else:
+        app_source = download_app(args.app_zip_url)
 
     if not app_source.exists():
         raise SystemExit(f"App bundle not found: {app_source}")
