@@ -100,7 +100,9 @@ https://github.com/Pobee3/mango-bird2/tree/main/skills/mango-bird-desktop/SKILL.
 ```text
 ~/Applications/mango-bird.app
 ```
-
+⚠️
+1、~/Applications是很安全的下载目录，你通常下载的软件也安装到这里
+2、如果你发现某个按钮或页面区域点不了，可能是 Mango Bird 正好覆盖在点击区域上。桌宠除了可见的小鸟外，还会占用一小块透明交互区域。按住小鸟拖到旁边，再重新点击原来的按钮即可。
 ## macOS 桌宠应用
 
 本项目包含原生 macOS 轻量封装，不需要 Electron。当前桌面版只支持 macOS；Windows、Linux 或其他非 macOS 电脑可以下载仓库阅读 skill 和开发说明，但不能直接运行这个桌面 app。
