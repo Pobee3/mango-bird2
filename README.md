@@ -101,6 +101,11 @@ https://github.com/Pobee3/mango-bird2/tree/main/skills/mango-bird-desktop/SKILL.
 ~/Applications/mango-bird.app
 ```
 
+注意：
+
+1. `~/Applications` 是当前用户自己的应用程序目录，Mango Bird 默认安装到这里，通常不需要管理员权限，也不会写入系统级 `/Applications` 或影响同一台 Mac 上的其他用户；如需删除，直接删除 `~/Applications/mango-bird.app` 即可。
+2. 如果你发现某个按钮或页面区域点不了，可能是 Mango Bird 正好覆盖在点击区域上。桌宠除了可见的小鸟外，还会占用一小块透明交互区域。按住小鸟拖到旁边，再重新点击原来的按钮即可。
+
 ## macOS 桌宠应用
 
 本项目包含原生 macOS 轻量封装，不需要 Electron。当前桌面版只支持 macOS；Windows、Linux 或其他非 macOS 电脑可以下载仓库阅读 skill 和开发说明，但不能直接运行这个桌面 app。
@@ -135,6 +140,24 @@ MANGO_AI_MODEL=你的可用模型名
 ```
 
 API Key 应保持为单行文本，不要包含换行。
+
+## API Key 与隐私
+
+Mango Bird 不会把你的 API Key 发送给作者、GitHub、Codex 或 Claude Code。API Key 会保存在你自己的 Mac 本地：
+
+```text
+~/Library/Application Support/Mango Bird/.env
+```
+
+第一次使用“问小鸟”时，如果聊天框提示你输入 API Key，你在聊天框中输入的这一条内容只会用于保存到本机 `.env` 配置文件，不会作为聊天消息发送给大模型。
+
+保存成功后，只要没有再次出现“请输入 API Key”、或在“更换模型”后再次提示“请输入 API Key”等红色提示，之后你在聊天框中输入的内容都会作为正常问题发送给你选择的大模型服务商，例如 DeepSeek 或 GLM，用于生成回答或解析提醒时间。
+
+请不要在聊天中输入密码、身份证、商业机密等敏感信息。也不建议把 API Key 直接发给 agent。
+
+## API 与费用
+
+模型调用会消耗你自己的模型服务账号额度，具体费用以 DeepSeek / GLM 等服务商规则为准。
 
 ## 本地开发
 
