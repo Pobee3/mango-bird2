@@ -101,7 +101,7 @@ https://github.com/Pobee3/mango-bird2/tree/main/skills/mango-bird-desktop/SKILL.
 ~/Applications/mango-bird.app
 ```
 ⚠️
-1、~/Applications是很安全的下载目录，你通常下载的软件也安装到这里
+1、~/Applications（当前用户自己的应用程序目录）是很安全的安装位置，Mango Bird 默认安装到这里，通常不需要管理员权限，也不会写入系统级 `/Applications` 或影响同一台 Mac 上的其他用户；如需删除，直接删除 `~/Applications/mango-bird.app` 即可。
 2、如果你发现某个按钮或页面区域点不了，可能是 Mango Bird 正好覆盖在点击区域上。桌宠除了可见的小鸟外，还会占用一小块透明交互区域。按住小鸟拖到旁边，再重新点击原来的按钮即可。
 ## macOS 桌宠应用
 
