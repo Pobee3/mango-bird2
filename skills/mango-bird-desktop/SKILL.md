@@ -90,7 +90,7 @@ For Codex users, keep this folder in the repo at:
 skills/mango-bird-desktop/
 ```
 
-For ordinary Codex users, do not show terminal commands. Tell them to ask Codex to install the skill from `https://github.com/Pobee3/mango-bird/tree/main/skills/mango-bird-desktop`; after Codex has the skill, they should run the desktop pet with this single recommended prompt:
+For ordinary Codex users, do not show terminal commands. Tell them to ask Codex to install the skill from `https://github.com/Pobee3/mango-bird2/tree/main/skills/mango-bird-desktop`; after Codex has the skill, they should run the desktop pet with this single recommended prompt:
 
 ```text
 使用 $mango-bird-desktop 安装 Mango Bird macOS 桌宠

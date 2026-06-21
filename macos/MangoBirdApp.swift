@@ -153,6 +153,10 @@ private final class MangoLocalServer {
       handleChat(request.body, completion: completion)
       return
     }
+    if request.method == "POST", cleanPath == "/api/parse-reminder" {
+      handleParseReminder(request.body, completion: completion)
+      return
+    }
     if request.method == "GET" || request.method == "HEAD" {
       completion(staticResponse(path: cleanPath, includeBody: request.method == "GET"))
       return
@@ -297,11 +301,81 @@ private final class MangoLocalServer {
     if provider == "deepseek", mode == "thinking" {
       upstreamPayload["thinking"] = ["type": "enabled"]
     }
-    guard let requestBody = try? JSONSerialization.data(withJSONObject: upstreamPayload) else {
-      completion(jsonResponse(status: 502, payload: ["error": "模型服务请求失败，请稍后再试。"]))
+
+    sendUpstreamChat(provider: provider, payload: upstreamPayload, completion: completion) { answer in
+      ["message": answer]
+    }
+  }
+
+  private func handleParseReminder(_ body: Data, completion: @escaping (Data) -> Void) {
+    guard body.count > 0, body.count <= 8192 else {
+      completion(jsonResponse(status: 413, payload: ["error": "提醒内容过长。"]))
       return
     }
-    guard let url = URL(string: configuredAPIURL(provider: provider)) else {
+    guard let payload = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
+          var text = payload["text"] as? String
+    else {
+      completion(jsonResponse(status: 400, payload: ["error": "请求格式不正确。"]))
+      return
+    }
+    text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !text.isEmpty else {
+      completion(jsonResponse(status: 400, payload: ["error": "请输入提醒内容。"]))
+      return
+    }
+
+    let provider = configuredProvider()
+    let apiKey = configuredAPIKey()
+    guard !apiKey.isEmpty else {
+      completion(jsonResponse(status: 503, payload: ["error": "尚未设置 API Key，请设置后再使用智能解析。"]))
+      return
+    }
+
+    let now = (payload["now"] as? String) ?? ISO8601DateFormatter().string(from: Date())
+    let systemPrompt = """
+      你是提醒时间解析器。只返回一个 JSON 对象，不要 Markdown，不要解释。
+      当前时间是 \(now)。请按中国用户习惯理解中文提醒。
+      如果可以确定提醒时间，返回：
+      {"event":"事项名称","trigger_at":"YYYY-MM-DDTHH:mm:ss+08:00","needs_clarification":false,"clarification":""}
+      如果缺少必要信息或不确定，返回：
+      {"event":"尽量提取的事项","trigger_at":null,"needs_clarification":true,"clarification":"一句简短中文追问或格式提示"}
+      event 应去掉时间词和“提醒我”等提示词；trigger_at 必须是未来时间；不要编造过于不确定的具体时间。
+      如果用户只给了日期、星期、月份日期，或只说“早上/下午/晚上”等大致时间但没有具体钟点，不要默认 00:00 或自行猜测，必须 needs_clarification=true，并询问“你想几点提醒？”。
+      """
+    let userPrompt = "提醒文本：\(String(text.prefix(500)))"
+    let upstreamPayload: [String: Any] = [
+      "model": configuredModel(provider: provider),
+      "messages": [
+        ["role": "system", "content": systemPrompt],
+        ["role": "user", "content": userPrompt]
+      ],
+      "stream": false,
+      "temperature": 0.1,
+      "max_tokens": 300
+    ]
+
+    sendUpstreamChat(provider: provider, payload: upstreamPayload, completion: completion) { answer in
+      let parsed = self.parseReminderJSON(answer)
+      if parsed.isEmpty {
+        return [
+          "needs_clarification": true,
+          "clarification": "没能识别出提醒时间，请换一种说法重新输入。"
+        ]
+      }
+      return parsed
+    }
+  }
+
+  private func sendUpstreamChat(
+    provider: String,
+    payload upstreamPayload: [String: Any],
+    completion: @escaping (Data) -> Void,
+    mapAnswer: @escaping (String) -> [String: Any]
+  ) {
+    let apiKey = configuredAPIKey()
+    guard let requestBody = try? JSONSerialization.data(withJSONObject: upstreamPayload),
+          let url = URL(string: configuredAPIURL(provider: provider))
+    else {
       completion(jsonResponse(status: 502, payload: ["error": "模型服务请求失败，请稍后再试。"]))
       return
     }
@@ -337,8 +411,34 @@ private final class MangoLocalServer {
         completion(self.jsonResponse(status: 502, payload: ["error": "模型服务没有返回回答，请重新提问。"]))
         return
       }
-      completion(self.jsonResponse(status: 200, payload: ["message": answer]))
+      completion(self.jsonResponse(status: 200, payload: mapAnswer(answer)))
     }.resume()
+  }
+
+  private func parseReminderJSON(_ answer: String) -> [String: Any] {
+    var text = answer.trimmingCharacters(in: .whitespacesAndNewlines)
+    if text.hasPrefix("```") {
+      text = text.replacingOccurrences(of: "```json", with: "")
+        .replacingOccurrences(of: "```", with: "")
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    if let start = text.firstIndex(of: "{"), let end = text.lastIndex(of: "}"), start <= end {
+      text = String(text[start...end])
+    }
+    guard let data = text.data(using: .utf8),
+          let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    else { return [:] }
+    var result: [String: Any] = [
+      "event": object["event"] as? String ?? "",
+      "needs_clarification": object["needs_clarification"] as? Bool ?? false,
+      "clarification": object["clarification"] as? String ?? ""
+    ]
+    if let triggerAt = object["trigger_at"] as? String, !triggerAt.isEmpty {
+      result["trigger_at"] = triggerAt
+    } else {
+      result["trigger_at"] = NSNull()
+    }
+    return result
   }
 
   private func upstreamErrorMessage(statusCode: Int, data: Data?) -> String {

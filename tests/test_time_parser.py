@@ -31,6 +31,20 @@ class ParseChineseTimeTests(unittest.TestCase):
             datetime(2026, 3, 5, 14, 0),
         )
 
+    def test_dot_month_day_defaults_to_midnight(self) -> None:
+        self.assert_parsed(
+            "8.20开会",
+            "开会",
+            datetime(2026, 8, 20, 0, 0),
+        )
+
+    def test_dot_month_day_with_suffix_and_clock(self) -> None:
+        self.assert_parsed(
+            "8.20号下午2点开会",
+            "开会",
+            datetime(2026, 8, 20, 14, 0),
+        )
+
     def test_absolute_month_day_with_exact_minutes(self) -> None:
         self.assert_parsed(
             "3月5日14点20分发布版本",

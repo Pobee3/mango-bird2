@@ -30,6 +30,7 @@ _WEEK_RE = re.compile(
 )
 _MONTH_DAY_RE = re.compile(
     rf"(?P<month>{_NUMBER})月(?P<day>{_NUMBER})(?:日|号)"
+    rf"|(?P<dot_month>{_NUMBER})[.．](?P<dot_day>{_NUMBER})(?:日|号)?"
 )
 _THIS_MONTH_RE = re.compile(rf"本月(?P<day>{_NUMBER})(?:日|号)")
 _DAY_WORD_RE = re.compile(r"今天|明天|明早|后天")
@@ -216,9 +217,11 @@ def parse_chinese_time(text: str, now: Optional[datetime] = None) -> ParseResult
             explicit_date = True
             spans.append(this_month_match.span())
         elif month_day_match:
+            month = month_day_match.group("month") or month_day_match.group("dot_month")
+            day = month_day_match.group("day") or month_day_match.group("dot_day")
             target_date = base.date().replace(
-                month=_parse_number(month_day_match.group("month")),
-                day=_parse_number(month_day_match.group("day")),
+                month=_parse_number(month),
+                day=_parse_number(day),
             )
             explicit_date = True
             spans.append(month_day_match.span())

@@ -126,10 +126,10 @@
       calc(11px * var(--pet-ui-scale, 0.72))
       calc(14px * var(--pet-ui-scale, 0.72));
     border-radius: calc(22px * var(--pet-ui-scale, 0.72));
-    font-size: 12px;
+    font-size: 8px;
     line-height: 1.4;
-    white-space: normal;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+    overflow-wrap: normal;
     transform: translateX(-50%) translateY(calc(34px * var(--pet-ui-scale, 0.72))) scale(0.2);
   }
 
@@ -151,7 +151,7 @@
 
   body.desktop-mode .reminder-pop.custom {
     border-radius: calc(20px * var(--pet-ui-scale, 0.72));
-    font-size: 12px;
+    font-size: 8px;
   }
 
   .stage {
@@ -271,7 +271,7 @@
   }
 
   .bird-wrap.idle .bird-img {
-    animation: birdIdle 1.6s ease-in-out infinite;
+    animation: birdIdle 2s ease-in-out infinite;
   }
 
   .bird-wrap.nuzzle .bird-img {
@@ -476,6 +476,9 @@
       0 9px 22px rgba(68, 75, 78, 0.12);
     color: #5d6b70;
     pointer-events: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     opacity: 0;
     transform: translate(82px, 55px) scale(0.2);
     backdrop-filter: blur(8px);
@@ -502,8 +505,8 @@
   .reminder-pop.custom {
     border-radius: 20px;
     line-height: 1.45;
-    font-size: 0.8rem;
-    word-break: break-word;
+    font-size: 8px;
+    word-break: normal;
   }
 
   /* ---- Reminder timer ---- */
@@ -1355,7 +1358,7 @@
 
   @keyframes birdIdle {
     0%,100% { transform: translateY(0) rotate(0deg) scaleX(var(--face, 1)); }
-    50% { transform: translateY(-2px) rotate(-0.6deg) scaleX(var(--face, 1)); }
+    50% { transform: translateY(-1px) rotate(-0.25deg) scaleX(calc(var(--face, 1) * 1.014)); }
   }
 
   @keyframes birdNuzzle {
@@ -1602,6 +1605,8 @@ const defaultDocumentTitle = document.title;
 const desktopMode = new URLSearchParams(window.location.search).get('desktop') === '1';
 const customReminderInputMaxLength = 60;
 const customReminderMessageMaxLength = 24;
+const reminderTimeParseFallbackMessage = '没能识别出提醒时间，请换一种说法重新输入。';
+const reminderTimeClarificationMessage = '你想几点提醒？请补充具体时间后重新输入。';
 const fallbackWeatherLocation = {
   latitude: 31.2304,
   longitude: 121.4737,
@@ -1674,6 +1679,7 @@ const config = {
   visibleBodyRatio: 0.62,
   chaseClickBodyScale: 1,
   desktopChaseClickBodyScale: 0.58,
+  desktopChaseBlankBodyScale: 2,
   hatchDuration: 820,
   peckDuration: 920,
   chaseSpeed: 0.2,
@@ -1681,6 +1687,8 @@ const config = {
   screenPadding: 72,
   headBlinkIdleDelay: 4000,
   sleepIdleDelay: 8000,
+  activeIdleActionMinDelay: 16000,
+  activeIdleActionMaxDelay: 48000,
   singleClickDelay: 260,
   headBlinkDurations: [180, 160, 160, 210, 180, 190, 180, 240],
   sleepFrameDuration: 420,
@@ -2491,12 +2499,22 @@ function formatMemoTime(timestamp) {
   const targetStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const dayDiff = Math.round((targetStart - todayStart) / 86400000);
   const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const weekStart = value => {
+    const dateValue = new Date(value.getFullYear(), value.getMonth(), value.getDate());
+    const weekday = (dateValue.getDay() + 6) % 7;
+    dateValue.setDate(dateValue.getDate() - weekday);
+    return dateValue;
+  };
   let dateText;
 
   if (dayDiff === 0) dateText = '今天';
   else if (dayDiff === 1) dateText = '明天';
   else if (dayDiff === 2) dateText = '后天';
-  else if (dayDiff > 2 && dayDiff <= 7) dateText = weekdays[date.getDay()];
+  else if (dayDiff > 2 && dayDiff <= 7) {
+    dateText = weekStart(targetStart).getTime() === weekStart(todayStart).getTime()
+      ? weekdays[date.getDay()]
+      : `下${weekdays[date.getDay()]}`;
+  }
   else {
     dateText = date.getFullYear() === now.getFullYear()
       ? `${date.getMonth() + 1}月${date.getDate()}日`
@@ -2513,7 +2531,11 @@ function formatMemoTime(timestamp) {
             : '晚上';
   const displayHour = hour > 12 ? hour - 12 : hour;
   const minuteText = minute ? `${String(minute).padStart(2, '0')}分` : '';
-  return `${dateText}${period}${displayHour}点${minuteText}`;
+  const absoluteDate = date.getFullYear() === now.getFullYear()
+    ? `${date.getMonth() + 1}/${date.getDate()}`
+    : `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+  const absoluteTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  return `${dateText}${period}${displayHour}点${minuteText} · ${absoluteDate} ${absoluteTime}`;
 }
 
 function removeQueuedMemoReminder(memoId) {
@@ -2887,13 +2909,17 @@ function parseNaturalReminder(input, baseNow = new Date()) {
     return {
       dueAt: now.getTime() + durationMs,
       message: cleanReminderEvent(message),
-      raw: input
+      raw: input,
+      hasExplicitTime: true,
+      hasExactTime: true,
+      needsTimeClarification: false
     };
   }
 
   let targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   let matchedDate = false;
   let matchedTime = false;
+  let matchedExactTime = false;
   let rollIfPast = false;
   let weekPrefix = '';
   let inferredPeriod = '';
@@ -2906,7 +2932,7 @@ function parseNaturalReminder(input, baseNow = new Date()) {
     return true;
   };
 
-  const fullDatePattern = new RegExp(`(?:(${number})年)?(${number})月(${number})(?:日|号)`);
+  const fullDatePattern = new RegExp(`(?:(${number})年)?(${number})(?:月(${number})(?:日|号)|[.．](${number})(?:日|号)?)`);
   const thisMonthPattern = new RegExp(`本月(${number})(?:日|号)`);
   const weekPattern = /(本周|这周|下周|周|星期)(?:星期|周)?([一二三四五六日天1-7])/;
 
@@ -2932,7 +2958,7 @@ function parseNaturalReminder(input, baseNow = new Date()) {
   } else if (consume(fullDatePattern, match => {
     const year = match[1] ? chineseNumberToValue(match[1]) : now.getFullYear();
     const month = chineseNumberToValue(match[2]);
-    const day = chineseNumberToValue(match[3]);
+    const day = chineseNumberToValue(match[3] || match[4]);
     const candidate = new Date(year, month - 1, day);
     if (
       candidate.getFullYear() !== year
@@ -2973,6 +2999,7 @@ function parseNaturalReminder(input, baseNow = new Date()) {
     }
     targetDate.setHours(clock.hour, clock.minute, 0, 0);
     matchedTime = true;
+    matchedExactTime = true;
   })) {
     consume(colonTimePattern, match => {
       const clock = resolveReminderClock(
@@ -2986,6 +3013,7 @@ function parseNaturalReminder(input, baseNow = new Date()) {
       }
       targetDate.setHours(clock.hour, clock.minute, 0, 0);
       matchedTime = true;
+      matchedExactTime = true;
     });
   }
   if (invalidClock) return null;
@@ -3024,8 +3052,52 @@ function parseNaturalReminder(input, baseNow = new Date()) {
   return {
     dueAt: targetDate.getTime(),
     message: cleanReminderEvent(message),
-    raw: input
+    raw: input,
+    hasExplicitTime: matchedTime,
+    hasExactTime: matchedExactTime,
+    needsTimeClarification: !matchedExactTime
   };
+}
+
+async function parseReminderWithAi(input) {
+  if (!desktopMode) return null;
+  try {
+    const response = await fetch('/api/parse-reminder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: input,
+        now: new Date().toISOString()
+      })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return {
+        error: result.error || '智能解析暂时不可用，请稍后再试。'
+      };
+    }
+    if (result.needs_clarification) {
+      return {
+        clarification: result.clarification || reminderTimeParseFallbackMessage
+      };
+    }
+    const dueAt = Date.parse(result.trigger_at || '');
+    if (!Number.isFinite(dueAt)) {
+      return {
+        clarification: reminderTimeParseFallbackMessage
+      };
+    }
+    return {
+      dueAt,
+      message: cleanReminderEvent(result.event || input),
+      raw: input,
+      aiParsed: true
+    };
+  } catch {
+    return {
+      error: '智能解析暂时不可用，请稍后再试。'
+    };
+  }
 }
 
 function escapeCalendarText(value) {
@@ -3363,7 +3435,8 @@ function isWeatherBubbleContextPoint(x, y) {
 
 function isBirdBodyContextPoint(x, y) {
   if (!pet.ready || pet.state === 'hatching') return false;
-  if (reminderTimer.dialogOpen || blocksLiveInteraction()) return false;
+  if (reminderTimer.dialogOpen) return false;
+  if (blocksLiveInteraction() && pet.state !== 'sleeping') return false;
   const body = getBirdBodyMetrics();
   return distanceToBird(x, y) < body.chaseClickDistance;
 }
@@ -3529,6 +3602,14 @@ function isElementInteractiveAtPoint(element, x, y, padding = 0) {
   return rectContainsPoint(element.getBoundingClientRect(), x, y, padding);
 }
 
+function isDesktopBlankChasePoint(x, y) {
+  if (!desktopMode || !pet.ready || pet.state !== 'idle') return false;
+  const body = getBirdBodyMetrics();
+  const distance = distanceToBird(x, y);
+  return distance >= body.chaseClickDistance &&
+    distance <= body.bodySize * config.desktopChaseBlankBodyScale;
+}
+
 function isMangoPointerInteractive(x, y) {
   if (mangoClosed || stage.classList.contains('closed')) return false;
   if (pet.desktopDrag) return true;
@@ -3543,10 +3624,11 @@ function isMangoPointerInteractive(x, y) {
   if (isElementInteractiveAtPoint(mangoContextMenu, x, y, desktopControlPadding)) return true;
   if (isElementInteractiveAtPoint(weatherBubbleHit, x, y, desktopControlPadding)) return true;
   if (!desktopMode && isElementInteractiveAtPoint(resetBtn, x, y, desktopControlPadding)) return true;
-  if (pet.ready && !blocksLiveInteraction()) {
+  if (isDesktopBlankChasePoint(x, y)) return true;
+  if (!desktopMode && pet.ready && !blocksLiveInteraction()) {
     const body = getBirdBodyMetrics();
-    const minDesktopRadius = desktopMode ? 118 : 86;
-    if (distanceToBird(point.x, point.y) <= Math.max(body.chaseClickDistance, minDesktopRadius)) {
+    const minRadius = 86;
+    if (distanceToBird(point.x, point.y) <= Math.max(body.chaseClickDistance, minRadius)) {
       return true;
     }
   }
@@ -3587,14 +3669,8 @@ function desktopForwardClick(x, y, isDoubleClick = false) {
     return true;
   }
 
-  if (isDoubleClick) {
-    const birdTarget = target.closest?.('#birdWrap');
-    const body = getBirdBodyMetrics();
-    const outsideBirdBody = distanceToBird(x, y) >= body.chaseClickDistance;
-    if ((target === stage || target === document.body || target === document.documentElement) ||
-        (birdTarget && outsideBirdBody)) {
-      return desktopStageClick(x, y);
-    }
+  if (isDesktopBlankChasePoint(x, y)) {
+    return desktopStageClick(x, y);
   }
 
   target.dispatchEvent(new MouseEvent('click', {
@@ -3725,8 +3801,12 @@ function scheduleHeadBlink() {
   pet.inactivityTimer = setTimeout(() => {
     pet.inactivityTimer = null;
     if (pet.inactivityPhase !== 'headBlink') return;
-    playHeadBlink();
-  }, config.headBlinkIdleDelay);
+    if (isSleepWindow()) {
+      playHeadBlink({ afterAction: scheduleSleepAfterHeadBlink });
+    } else {
+      playIdleMicroAction();
+    }
+  }, getNextIdleActionDelay());
 }
 
 function scheduleSleepAfterHeadBlink() {
@@ -3737,8 +3817,25 @@ function scheduleSleepAfterHeadBlink() {
   pet.inactivityTimer = setTimeout(() => {
     pet.inactivityTimer = null;
     if (pet.inactivityPhase !== 'sleep') return;
-    enterSleep();
+    if (isSleepWindow()) {
+      enterSleep();
+    } else {
+      playIdleMicroAction();
+    }
   }, config.sleepIdleDelay);
+}
+
+function isSleepWindow(now = new Date()) {
+  const hour = now.getHours() + now.getMinutes() / 60;
+  return (hour >= 11 && hour < 13) ||
+    (hour >= 17 && hour < 19) ||
+    hour >= 21;
+}
+
+function getNextIdleActionDelay() {
+  if (isSleepWindow()) return config.headBlinkIdleDelay;
+  return config.activeIdleActionMinDelay +
+    Math.random() * (config.activeIdleActionMaxDelay - config.activeIdleActionMinDelay);
 }
 
 function beginPetInteraction() {
@@ -3764,7 +3861,7 @@ function returnToIdle(options = {}) {
   if (options.resetInactivity ?? true) scheduleHeadBlink();
 }
 
-function playHeadBlink() {
+function playHeadBlink(options = {}) {
   if (!pet.ready || pet.state !== 'idle') return;
 
   clearInactivityTimer();
@@ -3786,8 +3883,41 @@ function playHeadBlink() {
     if (pet.state !== 'headBlink') return;
     stopFramePlayback();
     returnToIdle({ resetInactivity: false });
-    scheduleSleepAfterHeadBlink();
+    if (typeof options.afterAction === 'function') {
+      options.afterAction();
+    } else {
+      scheduleHeadBlink();
+    }
   }, played ? actionDuration + 60 : 0);
+}
+
+function playIdleRuffle() {
+  if (!pet.ready || pet.state !== 'idle') return;
+
+  clearInactivityTimer();
+  clearPetTimers();
+  stopMotionLoops();
+  cancelNuzzleHover();
+  pet.nuzzleArmed = true;
+  updateFacingStyles();
+  setPetState('waking');
+  playFrameSet('waking', { duration: config.ruffleFrameDuration, loop: false });
+  renderBird({ scale: 1 });
+
+  later(() => {
+    if (pet.state !== 'waking') return;
+    stopFramePlayback();
+    returnToIdle();
+  }, frameSets.waking.length * config.ruffleFrameDuration + 80);
+}
+
+function playIdleMicroAction() {
+  if (!pet.ready || pet.state !== 'idle') return;
+  if (Math.random() < 0.34) {
+    playIdleRuffle();
+  } else {
+    playHeadBlink();
+  }
 }
 
 function moveBirdToward(target, options = {}) {
@@ -3881,7 +4011,7 @@ function playPeck(target) {
 }
 
 function playChaseAndPeck(target) {
-  if (!pet.ready || blocksLiveInteraction() || ['chase', 'peck'].includes(pet.state)) return;
+  if (!pet.ready || pet.state !== 'idle') return;
   beginPetInteraction();
   clearPetTimers();
   stopMotionLoops();
@@ -3915,8 +4045,10 @@ function enterSleep() {
   renderBird({ scale: 1 });
 }
 
-function wakeFromSleep() {
-  if (!pet.ready || pet.state !== 'sleeping') return;
+function wakeFromSleep(options = {}) {
+  if (!pet.ready || pet.state !== 'sleeping') return false;
+
+  const afterWake = typeof options.afterWake === 'function' ? options.afterWake : null;
 
   clearInactivityTimer();
   clearPetTimers();
@@ -3929,8 +4061,10 @@ function wakeFromSleep() {
   later(() => {
     if (pet.state !== 'waking') return;
     stopFramePlayback();
-    returnToIdle();
+    returnToIdle({ resetInactivity: !afterWake });
+    afterWake?.();
   }, frameSets.waking.length * config.ruffleFrameDuration + 80);
+  return true;
 }
 
 function spawnBird(position = null, onReady = null) {
@@ -4072,6 +4206,14 @@ function handleStageClick(event) {
   if (blocksLiveInteraction()) return;
 
   const point = { x: event.clientX, y: event.clientY };
+  if (desktopMode) {
+    if (!isDesktopBlankChasePoint(point.x, point.y)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    playChaseAndPeck(point);
+    return;
+  }
+
   const body = getBirdBodyMetrics();
 
   if (birdWrap.contains(event.target)) {
@@ -4084,6 +4226,8 @@ function handleStageClick(event) {
 }
 
 function desktopStageClick(x, y) {
+  if (!isDesktopBlankChasePoint(x, y)) return false;
+  playChaseAndPeck({ x, y });
   return true;
 }
 
@@ -4354,6 +4498,12 @@ birdWrap.addEventListener('click', event => {
     return;
   }
   if (weatherBubbleHit.contains(event.target)) return;
+  if (isDesktopBlankChasePoint(event.clientX, event.clientY)) {
+    if (pet.singleClickTimer) clearTimeout(pet.singleClickTimer);
+    pet.singleClickTimer = null;
+    desktopStageClick(event.clientX, event.clientY);
+    return;
+  }
   if (reminderTimer.dialogOpen && pet.state === 'dialogPerch') {
     if (['running', 'paused'].includes(reminderTimer.pomodoroState)) {
       if (toggleActiveTimerAtPoint(event.clientX, event.clientY)) return;
@@ -4403,6 +4553,7 @@ birdWrap.addEventListener('dblclick', event => {
 
 stage.addEventListener('pointermove', handlePointerMove);
 stage.addEventListener('pointerdown', captureActiveTimerPointer, { capture: true });
+stage.addEventListener('click', handleStageClick);
 timerDialog.addEventListener('click', event => event.stopPropagation());
 timerDialog.addEventListener('pointerdown', activateDesktopWindow, { capture: true });
 timerDialog.addEventListener('pointerdown', captureActiveTimerPointer, { capture: true });
@@ -4554,7 +4705,7 @@ timerCancel.addEventListener('click', event => {
   event.stopPropagation();
   stopPomodoroTimer();
 });
-customReminderForm.addEventListener('submit', event => {
+customReminderForm.addEventListener('submit', async event => {
   event.preventDefault();
   const input = customReminderText.value.trim();
 
@@ -4564,7 +4715,24 @@ customReminderForm.addEventListener('submit', event => {
     return;
   }
 
-  const parsed = parseNaturalReminder(input);
+  let parsed = parseNaturalReminder(input);
+  const needsTimeClarification = Boolean(parsed?.needsTimeClarification);
+  if (!parsed || parsed.needsTimeClarification) {
+    customReminderError.textContent = desktopMode
+      ? (parsed?.needsTimeClarification ? '还需要具体时间，正在请 Mango 判断…' : '本地没读懂，正在请 Mango 智能解析…')
+      : reminderTimeParseFallbackMessage;
+    parsed = await parseReminderWithAi(input);
+    if (!parsed || parsed.error || parsed.clarification) {
+      if (needsTimeClarification) {
+        customReminderError.textContent = parsed?.clarification || reminderTimeClarificationMessage;
+      } else {
+        customReminderError.textContent = parsed?.error || parsed?.clarification ||
+          reminderTimeParseFallbackMessage;
+      }
+      customReminderText.focus();
+      return;
+    }
+  }
   const dueAt = parsed?.dueAt > Date.now() ? parsed.dueAt : null;
   const eventName = parsed?.message || cleanReminderEvent(input);
   if (eventName.length > customReminderMessageMaxLength) {
