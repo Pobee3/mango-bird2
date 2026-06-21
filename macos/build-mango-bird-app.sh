@@ -35,4 +35,6 @@ MANGO_AI_PROVIDER=deepseek
 MANGO_AI_API_KEY=your-api-key
 ENV
 
+codesign --force --deep --sign - "$APP_DIR"
+
 echo "Built: $APP_DIR"
